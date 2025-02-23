@@ -13,7 +13,7 @@ import Link from "next/link";
 
 export default function Page() {
   return (
-    <div className="min-h-screen text-zinc-900 p-4 md:p-6">
+    <div className="p-4 md:p-6">
       <Tabs defaultValue="your-songs" className="space-y-8">
         <div className="rounded-2xl p-1.5 bg-gradient-to-r from-purple-500/5 to-blue-500/5">
           <TabsList className="grid grid-cols-3 h-auto bg-transparent gap-2">

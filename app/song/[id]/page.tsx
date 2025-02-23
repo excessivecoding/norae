@@ -9,13 +9,22 @@ import {
   SkipForward,
   Volume2,
   X,
+  Send,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+} from "@/components/ui/sheet";
+import { Input } from "@/components/ui/input";
 import { useState, useEffect } from "react";
+import { cn } from "@/lib/utils";
 
 const lyrics = [
   {
@@ -165,6 +174,8 @@ export default function SongPage() {
   const [selectedWord, setSelectedWord] = useState<number | null>(null);
   const [isStarred, setIsStarred] = useState(false);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [message, setMessage] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -341,7 +352,12 @@ export default function SongPage() {
                     </div>
                   </div>
                   <div className="flex justify-end">
-                    <Button variant="outline" size="sm" className="gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setIsChatOpen(true)}
+                    >
                       <Bot className="w-4 h-4" />
                       Ask GPT
                     </Button>
@@ -352,6 +368,46 @@ export default function SongPage() {
           </div>
         </div>
       </div>
+
+      <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
+        <SheetContent
+          side="left"
+          className={cn(
+            "!w-[50%] !max-w-none p-0",
+            "data-[state=open]:duration-500 data-[state=closed]:duration-300",
+            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left"
+          )}
+        >
+          <div className="flex h-full flex-col">
+            <SheetHeader className="p-6 border-b">
+              <SheetTitle>Chat with GPT</SheetTitle>
+            </SheetHeader>
+            <div className="flex-1 overflow-y-auto p-6">
+              {/* Chat messages will go here */}
+            </div>
+            <div className="border-t p-4">
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  // Handle message submission
+                  setMessage("");
+                }}
+                className="flex gap-2"
+              >
+                <Input
+                  placeholder="Type your message..."
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  className="flex-1"
+                />
+                <Button type="submit" size="icon">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </form>
+            </div>
+          </div>
+        </SheetContent>
+      </Sheet>
 
       <div className="fixed bottom-0 left-0 right-0 p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
