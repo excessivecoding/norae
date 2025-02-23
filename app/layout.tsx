@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/command";
 import Link from "next/link";
 import "./globals.css";
+import Footer from "@/components/footer";
 
 // Mock data for search suggestions
 const recentSearches = [
@@ -193,6 +194,9 @@ export default function RootLayout({
             </header>
             {children}
           </div>
+        </div>
+        <div className="max-w-7xl mx-auto">
+          <Footer />
         </div>
       </body>
     </html>
