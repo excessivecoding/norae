@@ -69,7 +69,7 @@ export default function RootLayout({
   return (
     <html>
       <body>
-        <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-blue-50 text-zinc-900 p-4 md:p-6">
+        <div className="min-h-screen text-zinc-900 p-4 md:p-6">
           <div className="max-w-7xl mx-auto space-y-6">
             <header className="flex items-center justify-between gap-4 mb-8">
               <div className="flex items-center gap-4 flex-1">
@@ -146,7 +146,7 @@ export default function RootLayout({
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="relative h-10 w-10 rounded-full p-0 hover:scale-105 transition-transform"
+                    className="relative h-10 w-10 rounded-full p-0"
                   >
                     <div className="absolute inset-0 bg-gradient-to-r from-purple-500 to-blue-500 rounded-full blur opacity-25" />
                     <Avatar className="h-10 w-10 border-2 border-white">
