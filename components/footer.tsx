@@ -10,7 +10,7 @@ export default function Footer() {
           href="https://youtube.com/@yourchannel"
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-full bg-red-500 px-4 py-2 text-sm text-white transition-transform hover:scale-105 duration-300"
+          className="flex items-center gap-2 rounded-full bg-red-400 hover:bg-red-500 px-4 py-2 text-sm text-white transition-transform hover:scale-105 duration-300"
         >
           <Youtube className="h-4 w-4" />
           <span>Watch me build this</span>
