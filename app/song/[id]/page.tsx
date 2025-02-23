@@ -304,22 +304,30 @@ export default function SongPage() {
             <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-6">
               <CardContent className="p-8">
                 <div className="space-y-4">
-                  <h2 className="text-lg font-semibold flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1">
+                  <div className="text-3xl font-semibold flex items-center justify-between">
+                    <div className="flex flex-wrap gap-1 items-baseline">
                       {lyrics[selectedLine].korean
                         .split(" ")
-                        .map((word, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setSelectedWord(index)}
-                            className={`transition-colors hover:text-purple-600 ${
-                              selectedWord === index
-                                ? "text-purple-600 font-semibold"
-                                : ""
-                            }`}
-                          >
-                            {word}
-                          </button>
+                        .map((word, index, array) => (
+                          <>
+                            <button
+                              key={index}
+                              onClick={() => setSelectedWord(index)}
+                              className={`transition-colors relative hover:text-yellow-700/70 ${
+                                selectedWord === index
+                                  ? "text-yellow-700 font-semibold"
+                                  : ""
+                              }`}
+                            >
+                              {selectedWord === index && (
+                                <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
+                              )}
+                              <span className="relative">{word}</span>
+                            </button>
+                            {index < array.length - 1 && (
+                              <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
+                            )}
+                          </>
                         ))}
                     </div>
                     {selectedWord !== null && (
@@ -331,24 +339,10 @@ export default function SongPage() {
                         <X className="w-4 h-4" />
                       </button>
                     )}
-                  </h2>
+                  </div>
                   <div className="min-h-[100px] flex items-center justify-center rounded-lg bg-purple-50/50 p-6">
-                    <div className="flex flex-wrap gap-1">
-                      {lyrics[selectedLine].english
-                        .split(" ")
-                        .map((word, index) => (
-                          <button
-                            key={index}
-                            onClick={() => setSelectedWord(index)}
-                            className={`transition-colors hover:text-purple-700 ${
-                              selectedWord === index
-                                ? "text-purple-700 font-semibold"
-                                : ""
-                            }`}
-                          >
-                            {word}
-                          </button>
-                        ))}
+                    <div className="text-lg text-zinc-700">
+                      {lyrics[selectedLine].english}
                     </div>
                   </div>
                   <div className="flex justify-end">
