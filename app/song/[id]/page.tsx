@@ -403,59 +403,21 @@ export default function SongPage() {
         </SheetContent>
       </Sheet>
 
-      <div className="fixed bottom-0 left-0 right-0 p-4 md:p-6">
+      <div className="fixed bottom-14 left-0 right-0 p-4 md:p-6">
         <div className="max-w-7xl mx-auto">
-          <div className="md:w-[400px] md:ml-auto">
+          <div className="w-1/2 md:ml-auto">
             <Card className="border-none bg-white/95 backdrop-blur-sm shadow-xl">
-              <CardContent className="p-3">
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <div className="space-y-0.5">
-                      <div className="text-xs font-medium">Now Playing</div>
-                      <div className="text-xs text-zinc-500">0:00 / 3:45</div>
-                    </div>
-                    <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-xl hover:bg-purple-50 hover:text-purple-600"
-                      >
-                        <Volume2 className="w-3.5 h-3.5" />
-                      </Button>
-                      <Slider
-                        defaultValue={[100]}
-                        max={100}
-                        step={1}
-                        className="w-[40px]"
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Slider defaultValue={[33]} max={100} step={1} />
-                    <div className="flex items-center justify-center gap-1.5">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-xl hover:bg-purple-50 hover:text-purple-600"
-                      >
-                        <SkipBack className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        size="icon"
-                        className="rounded-xl bg-purple-500 hover:bg-purple-600 text-white h-7 w-7"
-                      >
-                        <Play className="w-3.5 h-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 rounded-xl hover:bg-purple-50 hover:text-purple-600"
-                      >
-                        <SkipForward className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
+              <CardContent className="p-0">
+                <iframe
+                  style={{ borderRadius: "12px" }}
+                  src="https://open.spotify.com/embed/track/0tCr7DoUBSdtdSl0rxZmct?utm_source=generator"
+                  width="100%"
+                  height="152"
+                  frameBorder="0"
+                  allowFullScreen
+                  allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+                  loading="lazy"
+                ></iframe>
               </CardContent>
             </Card>
           </div>
