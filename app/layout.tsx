@@ -45,11 +45,7 @@ const popularSearches = [
   { title: "봄날 (Spring Day)", artist: "BTS", searches: "42K searches" },
 ];
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout(props: { children: React.ReactNode }) {
   const [isSearchOpen, setIsSearchOpen] = React.useState(false);
   const searchRef = React.useRef<HTMLDivElement>(null);
 
@@ -192,7 +188,7 @@ export default function RootLayout({
                 </DropdownMenuContent>
               </DropdownMenu>
             </header>
-            {children}
+            {props.children}
           </div>
         </div>
         <div className="max-w-7xl mx-auto">
