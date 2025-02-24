@@ -16,7 +16,7 @@ export default function Page() {
     <div className="p-4 md:p-6">
       <Tabs defaultValue="your-songs" className="space-y-8">
         <div className="rounded-2xl p-1.5 bg-gradient-to-r from-purple-500/5 to-blue-500/5">
-          <TabsList className="grid grid-cols-3 h-auto bg-transparent gap-2">
+          <TabsList className="grid grid-cols-4 h-auto bg-transparent gap-2">
             <TabsTrigger
               value="your-songs"
               className="group relative overflow-hidden rounded-xl data-[state=active]:bg-white data-[state=active]:text-zinc-900 py-6 shadow-none border border-transparent data-[state=active]:border-purple-500/20 transition-all hover:bg-white/50"
@@ -30,6 +30,23 @@ export default function Page() {
                   <div className="font-semibold">Your Songs</div>
                   <div className="text-xs text-zinc-500 font-normal">
                     Songs that you saved
+                  </div>
+                </div>
+              </div>
+            </TabsTrigger>
+            <TabsTrigger
+              value="your-top"
+              className="group relative overflow-hidden rounded-xl data-[state=active]:bg-white data-[state=active]:text-zinc-900 py-6 shadow-none border border-transparent data-[state=active]:border-purple-500/20 transition-all hover:bg-white/50"
+            >
+              <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 to-rose-500/20 opacity-0 group-hover:opacity-100 group-data-[state=active]:opacity-100 transition-opacity" />
+              <div className="relative flex items-start gap-3">
+                <div className="rounded-lg bg-gradient-to-br from-pink-500 to-rose-500 p-2 text-white shadow-lg">
+                  <Music2 className="h-5 w-5" />
+                </div>
+                <div className="flex flex-col items-start text-left">
+                  <div className="font-semibold">Your Top</div>
+                  <div className="text-xs text-zinc-500 font-normal">
+                    Your most played songs
                   </div>
                 </div>
               </div>
@@ -73,6 +90,11 @@ export default function Page() {
 
         <TabsContent value="your-songs" className="space-y-6">
           <h2 className="text-2xl font-bold text-zinc-900">Your Songs</h2>
+          <SongList />
+        </TabsContent>
+
+        <TabsContent value="your-top" className="space-y-6">
+          <h2 className="text-2xl font-bold text-zinc-900">Your Top</h2>
           <SongList />
         </TabsContent>
 

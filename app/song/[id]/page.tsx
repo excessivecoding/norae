@@ -23,7 +23,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { Input } from "@/components/ui/input";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
 const lyrics = [
@@ -177,6 +177,7 @@ export default function SongPage() {
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [message, setMessage] = useState("");
   const { toast } = useToast();
+  const selectedLineRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -190,6 +191,49 @@ export default function SongPage() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedLine((prev) => Math.max(0, prev - 1));
+        setSelectedWord(null);
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedLine((prev) => Math.min(lyrics.length - 1, prev + 1));
+        setSelectedWord(null);
+      } else if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        const words = lyrics[selectedLine].korean.split(" ");
+        setSelectedWord((prev) => {
+          if (prev === null) return words.length - 1;
+          return Math.max(0, prev - 1);
+        });
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        const words = lyrics[selectedLine].korean.split(" ");
+        setSelectedWord((prev) => {
+          if (prev === null) return 0;
+          return Math.min(words.length - 1, prev + 1);
+        });
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setSelectedWord(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedLine]);
+
+  useEffect(() => {
+    if (selectedLineRef.current) {
+      selectedLineRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [selectedLine]);
 
   const handleStar = () => {
     setIsStarred(!isStarred);
@@ -277,23 +321,26 @@ export default function SongPage() {
         </div>
 
         <div className="grid md:grid-cols-2 gap-6">
-          <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none">
+          <Card className="border-none backdrop-blur-sm shadow-none">
             <CardContent className="p-8">
-              <div className="space-y-1">
+              <div className="space-y-4">
                 {lyrics.map((line, index) => (
                   <button
                     key={index}
+                    ref={selectedLine === index ? selectedLineRef : null}
                     onClick={() => {
                       setSelectedLine(index);
                       setSelectedWord(null);
                     }}
                     className={`w-full text-left transition-colors ${
                       selectedLine === index
-                        ? "text-purple-600 font-semibold"
-                        : "text-zinc-600 hover:text-purple-600/75"
+                        ? "text-zinc-900"
+                        : "text-zinc-400 hover:text-zinc-600"
                     }`}
                   >
-                    <p className="text-xl">{line.korean}</p>
+                    <p className="text-2xl leading-relaxed font-bold">
+                      {line.korean}
+                    </p>
                   </button>
                 ))}
               </div>
@@ -355,6 +402,44 @@ export default function SongPage() {
                       <Bot className="w-4 h-4" />
                       Ask GPT
                     </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-4">
+              <CardContent className="p-6">
+                <h3 className="text-sm font-medium text-zinc-900 mb-3">
+                  Keyboard Shortcuts
+                </h3>
+                <div className="space-y-2 text-sm text-zinc-500">
+                  <div className="flex items-center justify-between">
+                    <span>Navigate lines</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                        ↑
+                      </kbd>
+                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                        ↓
+                      </kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Navigate words</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                        ←
+                      </kbd>
+                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                        →
+                      </kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Clear selection</span>
+                    <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                      Esc
+                    </kbd>
                   </div>
                 </div>
               </CardContent>
