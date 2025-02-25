@@ -26,6 +26,8 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 
+export const runtime = "edge";
+
 const lyrics = [
   {
     korean: "[Verse 1]",
