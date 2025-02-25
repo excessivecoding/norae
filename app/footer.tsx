@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { Youtube, Github, Twitter } from "lucide-react";
 
-export default function Footer() {
+export function Footer() {
   return (
     <footer className="w-full border-t py-4">
       <div className="container flex items-center justify-between px-4 md:px-6">

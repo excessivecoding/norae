@@ -1,19 +1,8 @@
 "use client";
 
-import {
-  Star,
-  Music2,
-  Bot,
-  Play,
-  SkipBack,
-  SkipForward,
-  Volume2,
-  X,
-  Send,
-} from "lucide-react";
+import { Star, Music2, Bot, X, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Slider } from "@/components/ui/slider";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import {
