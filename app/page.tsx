@@ -11,6 +11,8 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
 
+export const runtime = "edge";
+
 export default function Page() {
   return (
     <div className="p-4 md:p-6">
