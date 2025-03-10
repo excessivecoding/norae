@@ -48,7 +48,7 @@ export function SongTabs({ tab }: SongTabsProps) {
   return (
     <Tabs value={tab} onValueChange={handleTabChange} className="space-y-8">
       <div className="rounded-2xl p-1.5 bg-gradient-to-r from-purple-500/5 to-blue-500/5">
-        <TabsList className="grid grid-cols-4 h-auto bg-transparent gap-2">
+        <TabsList className="grid grid-cols-3 h-auto bg-transparent gap-2">
           <TabsTrigger
             value="your-songs"
             className="group relative overflow-hidden rounded-xl data-[state=active]:bg-white data-[state=active]:text-zinc-900 py-6 shadow-none border border-transparent data-[state=active]:border-purple-500/20 transition-all hover:bg-white/50"
@@ -83,7 +83,7 @@ export function SongTabs({ tab }: SongTabsProps) {
               </div>
             </div>
           </TabsTrigger>
-          <TabsTrigger
+          {/* <TabsTrigger
             value="top-spotify"
             className="group relative overflow-hidden rounded-xl data-[state=active]:bg-white data-[state=active]:text-zinc-900 py-6 shadow-none border border-transparent data-[state=active]:border-purple-500/20 transition-all hover:bg-white/50"
           >
@@ -99,7 +99,7 @@ export function SongTabs({ tab }: SongTabsProps) {
                 </div>
               </div>
             </div>
-          </TabsTrigger>
+          </TabsTrigger> */}
           <TabsTrigger
             value="archives"
             className="group relative overflow-hidden rounded-xl data-[state=active]:bg-white data-[state=active]:text-zinc-900 py-6 shadow-none border border-transparent data-[state=active]:border-purple-500/20 transition-all hover:bg-white/50"
