@@ -486,14 +486,14 @@ export default function SongPage() {
               <CardContent className="p-0">
                 <iframe
                   style={{ borderRadius: "12px" }}
-                  src="https://open.spotify.com/embed/track/0tCr7DoUBSdtdSl0rxZmct?utm_source=generator"
+                  src="https://open.spotify.com/embed/track/2RjLD4zr1Kewq1xEKslHjL?utm_source=generator"
                   width="100%"
                   height="152"
                   frameBorder="0"
                   allowFullScreen
                   allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
                   loading="lazy"
-                ></iframe>
+                />
               </CardContent>
             </Card>
           </div>
