@@ -1,4 +1,5 @@
 import { setupDevPlatform } from "@cloudflare/next-on-pages/next-dev";
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
 
 let userConfig = undefined;
 try {
@@ -6,6 +7,8 @@ try {
 } catch (e) {
   // ignore error
 }
+
+initOpenNextCloudflareForDev();
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {

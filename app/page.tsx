@@ -2,6 +2,8 @@ import { auth } from "@/auth";
 import { SongTabs } from "./song-tabs";
 import { SongList } from "./song-list";
 import { RetryButton } from "./components/retry-button";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { Session } from "next-auth";
 
 export const runtime = "edge";
 
@@ -45,7 +47,7 @@ export default async function Page({
   try {
     const songs = await getSongsByTab({
       tab,
-      accessToken: session.accessToken,
+      session,
     });
 
     return (
@@ -82,26 +84,19 @@ export default async function Page({
   }
 }
 
-async function getSongsByTab(args: { tab: string; accessToken: string }) {
+async function getSongsByTab(args: { tab: string; session: Session }) {
   try {
     if (args.tab === "your-songs") {
-      // Fetch user's saved/liked tracks
-      const response = await fetch(
-        "https://api.spotify.com/v1/me/tracks?limit=50",
-        {
-          headers: {
-            Authorization: `Bearer ${args.accessToken}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      const env = getCloudflareContext().env as Env;
+      if (!args.session.user?.email) {
+        throw new Error("Need auth");
       }
+      const data =
+        (await env.KV.get(args.session.user?.email, {
+          type: "json",
+        })) || {};
 
-      const data = await response.json();
-      // Saved tracks are nested within items[].track
-      return data.items.map((item: any) => item.track);
+      return data.favoriteSongs || [];
     }
 
     if (args.tab === "your-top") {
@@ -109,7 +104,7 @@ async function getSongsByTab(args: { tab: string; accessToken: string }) {
         "https://api.spotify.com/v1/me/top/tracks?limit=50",
         {
           headers: {
-            Authorization: `Bearer ${args.accessToken}`,
+            Authorization: `Bearer ${args.session.accessToken}`,
           },
         }
       );
@@ -145,24 +140,16 @@ async function getSongsByTab(args: { tab: string; accessToken: string }) {
     // }
 
     if (args.tab === "archives") {
-      // For archives tab, let's use recently played tracks
-      const response = await fetch(
-        "https://api.spotify.com/v1/me/player/recently-played?limit=50",
-        {
-          headers: {
-            Authorization: `Bearer ${args.accessToken}`,
-          },
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
+      const env = getCloudflareContext().env as Env;
+      if (!args.session.user?.email) {
+        throw new Error("Need auth");
       }
+      const data =
+        (await env.KV.get(args.session.user?.email, {
+          type: "json",
+        })) || {};
 
-      const data = await response.json();
-
-      // Recently played tracks are nested within items[].track
-      return data.items.map((item: any) => item.track);
+      return data.archivedSongs || [];
     }
 
     throw new Error("Invalid tab");

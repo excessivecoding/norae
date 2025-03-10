@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { SongPageContent } from "./content";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 
 export const runtime = "edge";
 
@@ -24,5 +25,14 @@ export default async function SongPage({ params }: { params: { id: string } }) {
 
   const data = await response.json();
 
-  return <SongPageContent data={data} />;
+  const env = getCloudflareContext().env as Env;
+  const favorites = await env.KV.get(`v1/${session.user?.email}/favorites`);
+
+  // console.log(favorites, session, params.id);
+  return (
+    <SongPageContent
+      data={data}
+      isFavorite={favorites?.includes(params.id) || false}
+    />
+  );
 }

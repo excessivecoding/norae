@@ -14,6 +14,8 @@ import {
 import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
+// import { useSession } from "next-auth/react";
+import { toggleFavorite, checkIsFavorite } from "./actions";
 
 const lyrics = [
   {
@@ -178,15 +180,37 @@ const formatDuration = (ms: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
-export function SongPageContent({ data }: { data: SpotifyTrack }) {
+export function SongPageContent({
+  data,
+  isFavorite,
+}: {
+  data: SpotifyTrack;
+  isFavorite: boolean;
+}) {
   const [selectedLine, setSelectedLine] = useState<number>(0);
   const [selectedWord, setSelectedWord] = useState<number | null>(null);
-  const [isStarred, setIsStarred] = useState(false);
+  const [isStarred, setIsStarred] = useState(isFavorite);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [message, setMessage] = useState("");
   const { toast } = useToast();
   const selectedLineRef = useRef<HTMLButtonElement>(null);
+
+  // Check if song is already favorite on component mount
+  // useEffect(() => {
+  //   const checkFavoriteStatus = async () => {
+  //     if (session?.user?.email) {
+  //       try {
+  //         const isFavorite = await checkIsFavorite(data.id, session.user.email);
+  //         setIsStarred(isFavorite);
+  //       } catch (error) {
+  //         console.error("Error checking favorite status:", error);
+  //       }
+  //     }
+  //   };
+
+  //   checkFavoriteStatus();
+  // }, [data.id, session?.user?.email]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -244,12 +268,40 @@ export function SongPageContent({ data }: { data: SpotifyTrack }) {
     }
   }, [selectedLine]);
 
-  const handleStar = () => {
-    setIsStarred(!isStarred);
-    toast({
-      description: !isStarred ? "Added to favorites" : "Removed from favorites",
-      duration: 2000,
-    });
+  const handleStar = async () => {
+    // if (!session?.user?.email) {
+    //   toast({
+    //     description: "You must be logged in to favorite songs",
+    //     variant: "destructive",
+    //     duration: 3000,
+    //   });
+    //   return;
+    // }
+
+    try {
+      const newStatus = !isStarred;
+      setIsStarred(newStatus);
+
+      await toggleFavorite({
+        track: data,
+        operation: newStatus ? "add" : "remove",
+      });
+
+      toast({
+        description: newStatus
+          ? "Added to favorites"
+          : "Removed from favorites",
+        duration: 2000,
+      });
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+      setIsStarred(!isStarred); // Revert on error
+      toast({
+        description: "Failed to update favorites",
+        variant: "destructive",
+        duration: 3000,
+      });
+    }
   };
 
   return (
