@@ -16,7 +16,6 @@ import { signIn, signOut } from "next-auth/react";
 import type { User } from "next-auth";
 
 export function Header(props: { user: User | null }) {
-  console.log(props.user);
   return (
     <header className="flex items-center justify-between gap-4 mb-8">
       <div className="flex items-center gap-4 flex-1">
