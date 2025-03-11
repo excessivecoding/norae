@@ -1,8 +1,6 @@
 "use client";
 
-import * as React from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Music2, Star, Trophy, Archive, MoreVertical } from "lucide-react";
+import { Music2, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,23 +8,13 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Link from "next/link";
+import { SpotifyTrack } from "@/app/types/spotify";
 
-interface SongListProps {
-  tracks?: SpotifyTrack[];
-}
-
-interface SpotifyTrack {
-  id: string;
-  name: string;
-  artists: { name: string }[];
-  duration_ms: number;
-}
-
-export function SongList({ tracks }: SongListProps) {
+export function SongList(props: { tracks?: SpotifyTrack[] }) {
   // If tracks are provided, use them, otherwise use mock data
-  const displayTracks = tracks || Array.from({ length: 5 }).map(() => null);
+  const displayTracks =
+    props.tracks || Array.from({ length: 5 }).map(() => null);
 
   // Helper function to format duration
   const formatDuration = (ms: number) => {

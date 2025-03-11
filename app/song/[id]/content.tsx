@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { toggleFavorite } from "../../actions";
+import { SpotifyTrack } from "@/app/types/spotify";
 
 const lyrics = [
   {
@@ -159,19 +160,6 @@ const lyrics = [
   },
 ];
 
-// Define the Spotify API type
-type SpotifyTrack = {
-  id: string;
-  name: string;
-  artists: { id: string; name: string }[];
-  album: {
-    id: string;
-    name: string;
-    images?: { url: string; height: number; width: number }[];
-  };
-  duration_ms: number;
-};
-
 // Helper function to format duration from milliseconds to MM:SS
 const formatDuration = (ms: number): string => {
   const minutes = Math.floor(ms / 60000);
@@ -268,9 +256,10 @@ export function SongPageContent({
   }, [selectedLine]);
 
   const handleStar = async () => {
-    // if (!session?.user?.email) {
+    // if (!session || !session.user?.email) {
     //   toast({
-    //     description: "You must be logged in to favorite songs",
+    //     title: "Not logged in",
+    //     description: "Please log in to favorite songs",
     //     variant: "destructive",
     //     duration: 3000,
     //   });
@@ -281,8 +270,27 @@ export function SongPageContent({
       const newStatus = !isStarred;
       setIsStarred(newStatus);
 
+      // Get user email from session or context
+      const response = await fetch("/api/auth/session");
+      const sessionData = await response.json();
+
+      // Type guard for the sessionData
+      if (
+        !sessionData ||
+        typeof sessionData !== "object" ||
+        !("user" in sessionData) ||
+        !sessionData.user ||
+        typeof sessionData.user !== "object" ||
+        !("email" in sessionData.user)
+      ) {
+        throw new Error("User not authenticated");
+      }
+
+      const userEmail = sessionData.user.email as string;
+
       await toggleFavorite({
         track: data,
+        email: userEmail,
         operation: newStatus ? "add" : "remove",
       });
 
@@ -310,7 +318,7 @@ export function SongPageContent({
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center overflow-hidden">
-                {data.album.images && data.album.images.length > 0 ? (
+                {data.album?.images && data.album.images.length > 0 ? (
                   <img
                     src={data.album.images[0].url}
                     alt={`${data.album.name} cover`}
@@ -353,7 +361,7 @@ export function SongPageContent({
         >
           <div className="flex flex-col md:flex-row gap-6">
             <div className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden">
-              {data.album.images && data.album.images.length > 0 ? (
+              {data.album?.images && data.album.images.length > 0 ? (
                 <img
                   src={data.album.images[0].url}
                   alt={`${data.album.name} cover`}
@@ -396,7 +404,7 @@ export function SongPageContent({
                   <span className="font-medium">
                     {formatDuration(data.duration_ms)}
                   </span>{" "}
-                  • {data.album.name}
+                  • {data.album?.name}
                 </div>
               </div>
             </div>

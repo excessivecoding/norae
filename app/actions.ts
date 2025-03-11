@@ -2,18 +2,7 @@
 
 import { auth } from "@/auth";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
-
-type SpotifyTrack = {
-  id: string;
-  name: string;
-  artists: { id: string; name: string }[];
-  album: {
-    id: string;
-    name: string;
-    images?: { url: string; height: number; width: number }[];
-  };
-  duration_ms: number;
-};
+import { SpotifyTrack } from "@/app/types/spotify";
 
 export async function getUserFavorites(email: string) {
   const env = getCloudflareContext().env as Env;
