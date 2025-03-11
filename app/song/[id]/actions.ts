@@ -35,16 +35,24 @@ export async function toggleFavorite({
   const env = getCloudflareContext().env as Env;
 
   const rawData = await env.KV.get(`v1/${session.user.email}/favorites`);
-  const favorites = JSON.parse(rawData || "[]") as string[];
+  const favorites = JSON.parse(rawData || "[]") as SpotifyTrack[];
 
   if (operation === "add") {
     const data = await env.KV.put(
       `v1/${session.user.email}/favorites`,
-      JSON.stringify([...favorites, track.id])
+      JSON.stringify([...favorites, track])
     );
-  } else {
-    // data.favoriteSongs = data.favoriteSongs?.filter((t) => t.id !== track.id);
+    return { success: true };
   }
+
+  const data = await env.KV.put(
+    `v1/${session.user.email}/favorites`,
+    JSON.stringify(
+      favorites.filter((favoriteTrack) => favoriteTrack.id !== track.id)
+    )
+  );
+
+  return { success: true };
 }
 
 /**

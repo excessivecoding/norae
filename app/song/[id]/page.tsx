@@ -26,13 +26,17 @@ export default async function SongPage({ params }: { params: { id: string } }) {
   const data = await response.json();
 
   const env = getCloudflareContext().env as Env;
-  const favorites = await env.KV.get(`v1/${session.user?.email}/favorites`);
+  const favoriteTracks =
+    (await env.KV.get(`v1/${session.user?.email}/favorites`, {
+      type: "json",
+    })) || [];
 
-  // console.log(favorites, session, params.id);
   return (
     <SongPageContent
       data={data}
-      isFavorite={favorites?.includes(params.id) || false}
+      isFavorite={
+        !!favoriteTracks.find((favoriteTrack) => favoriteTrack.id === params.id)
+      }
     />
   );
 }

@@ -91,12 +91,12 @@ async function getSongsByTab(args: { tab: string; session: Session }) {
       if (!args.session.user?.email) {
         throw new Error("Need auth");
       }
-      const data =
-        (await env.KV.get(args.session.user?.email, {
+      const favoriteTracks =
+        (await env.KV.get(`v1/${args.session.user?.email}/favorites`, {
           type: "json",
-        })) || {};
+        })) || [];
 
-      return data.favoriteSongs || [];
+      return favoriteTracks || [];
     }
 
     if (args.tab === "your-top") {
@@ -144,12 +144,13 @@ async function getSongsByTab(args: { tab: string; session: Session }) {
       if (!args.session.user?.email) {
         throw new Error("Need auth");
       }
-      const data =
-        (await env.KV.get(args.session.user?.email, {
-          type: "json",
-        })) || {};
 
-      return data.archivedSongs || [];
+      const archivedTracks =
+        (await env.KV.get(`v1/${args.session.user?.email}/archived`, {
+          type: "json",
+        })) || [];
+
+      return archivedTracks;
     }
 
     throw new Error("Invalid tab");
