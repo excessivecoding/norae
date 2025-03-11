@@ -1,12 +1,13 @@
 import { auth } from "@/auth";
 import { SongPageContent } from "./content";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { hasUserFavorite } from "../../actions";
 
 export const runtime = "edge";
 
 export default async function SongPage({ params }: { params: { id: string } }) {
   const session = await auth();
-  if (!session?.accessToken) {
+
+  if (!session?.accessToken || !session?.user?.email) {
     throw new Error("No access token found");
   }
 
@@ -25,18 +26,7 @@ export default async function SongPage({ params }: { params: { id: string } }) {
 
   const data = await response.json();
 
-  const env = getCloudflareContext().env as Env;
-  const favoriteTracks =
-    (await env.KV.get(`v1/${session.user?.email}/favorites`, {
-      type: "json",
-    })) || [];
+  const isFavorite = await hasUserFavorite(session.user.email, params.id);
 
-  return (
-    <SongPageContent
-      data={data}
-      isFavorite={
-        !!favoriteTracks.find((favoriteTrack) => favoriteTrack.id === params.id)
-      }
-    />
-  );
+  return <SongPageContent data={data} isFavorite={isFavorite} />;
 }

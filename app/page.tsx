@@ -4,6 +4,7 @@ import { SongList } from "./song-list";
 import { RetryButton } from "./components/retry-button";
 import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { Session } from "next-auth";
+import { getUserFavorites } from "./actions";
 
 export const runtime = "edge";
 
@@ -86,17 +87,12 @@ export default async function Page({
 
 async function getSongsByTab(args: { tab: string; session: Session }) {
   try {
-    if (args.tab === "your-songs") {
-      const env = getCloudflareContext().env as Env;
-      if (!args.session.user?.email) {
-        throw new Error("Need auth");
-      }
-      const favoriteTracks =
-        (await env.KV.get(`v1/${args.session.user?.email}/favorites`, {
-          type: "json",
-        })) || [];
+    if (!args.session.user?.email) {
+      throw new Error("Need auth");
+    }
 
-      return favoriteTracks || [];
+    if (args.tab === "your-songs") {
+      return getUserFavorites(args.session.user.email);
     }
 
     if (args.tab === "your-top") {
