@@ -42,6 +42,38 @@ export function SongTabs({ tab }: SongTabsProps) {
     router.push(`/?tab=${value}`);
   };
 
+  // Add keyboard shortcuts for tabs
+  React.useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Check if no input elements are focused
+      if (
+        !(
+          document.activeElement instanceof HTMLInputElement ||
+          document.activeElement instanceof HTMLTextAreaElement
+        )
+      ) {
+        switch (event.key) {
+          case "1":
+            handleTabChange("your-songs");
+            break;
+          case "2":
+            handleTabChange("your-top");
+            break;
+          case "3":
+            handleTabChange("archives");
+            break;
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+
+    // Clean up event listener on component unmount
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [router]);
+
   // // You can use topTracks data in your component
   // const hasTopTracks = topTracks?.items && topTracks.items.length > 0;
 
