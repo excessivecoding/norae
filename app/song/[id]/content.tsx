@@ -17,149 +17,6 @@ import { cn } from "@/lib/utils";
 import { toggleFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 
-const lyrics = [
-  {
-    korean: "[Verse 1]",
-    english: "[Verse 1]",
-  },
-  {
-    korean: "가려진 오랜 시간이",
-    english: "The hidden long time",
-  },
-  {
-    korean: "우리를 다시 불러와",
-    english: "Calls us back again",
-  },
-  {
-    korean: "어느 곳에 있어도",
-    english: "No matter where we are",
-  },
-  {
-    korean: "그 끝은 항상 너인걸",
-    english: "The end is always you",
-  },
-  {
-    korean: "[Chorus]",
-    english: "[Chorus]",
-  },
-  {
-    korean: "'Cause I'm falling slowly love with you",
-    english: "'Cause I'm falling slowly love with you",
-  },
-  {
-    korean: "오랫동안 기다려온",
-    english: "I've been waiting for so long",
-  },
-  {
-    korean: "너는 봄이야",
-    english: "You are spring",
-  },
-  {
-    korean: "'Cause I'm falling slowly love with you",
-    english: "'Cause I'm falling slowly love with you",
-  },
-  {
-    korean: "다시 지워진다 해도",
-    english: "Even if it gets erased again",
-  },
-  {
-    korean: "All my life is you",
-    english: "All my life is you",
-  },
-  {
-    korean: "[Bridge]",
-    english: "[Bridge]",
-  },
-  {
-    korean: "꽃잎 날리던 하얀 길위에",
-    english: "On the white path where petals were flying",
-  },
-  {
-    korean: "행복했던 너와 나",
-    english: "You and I who were happy",
-  },
-  {
-    korean: "다시 만날 수 있다면",
-    english: "If we could meet again",
-  },
-  {
-    korean: "[Chorus]",
-    english: "[Chorus]",
-  },
-  {
-    korean: "'Cause I'm falling slowly love with you",
-    english: "'Cause I'm falling slowly love with you",
-  },
-  {
-    korean: "오랫동안 기다려온",
-    english: "I've been waiting for so long",
-  },
-  {
-    korean: "너는 봄이야",
-    english: "You are spring",
-  },
-  {
-    korean: "'Cause I'm falling slowly love with you",
-    english: "'Cause I'm falling slowly love with you",
-  },
-  {
-    korean: "다시 지워진다 해도",
-    english: "Even if it gets erased again",
-  },
-  {
-    korean: "All my life is you",
-    english: "All my life is you",
-  },
-  {
-    korean: "[Verse 2]",
-    english: "[Verse 2]",
-  },
-  {
-    korean: "너라는 이야기 속에",
-    english: "In the story called you",
-  },
-  {
-    korean: "다시 또 꿈을 꾸는 나",
-    english: "I'm dreaming again",
-  },
-  {
-    korean: "어떤 순간이 와도",
-    english: "No matter what moment comes",
-  },
-  {
-    korean: "난 너를 찾아 갈거야",
-    english: "I will go find you",
-  },
-  {
-    korean: "[Chorus]",
-    english: "[Chorus]",
-  },
-  {
-    korean: "'Cause I'm falling slowly love with you",
-    english: "'Cause I'm falling slowly love with you",
-  },
-  {
-    korean: "오랫동안 기다려온",
-    english: "I've been waiting for so long",
-  },
-  {
-    korean: "너는 봄이야",
-    english: "You are spring",
-  },
-  {
-    korean: "'Cause I'm falling slowly love with you",
-    english: "'Cause I'm falling slowly love with you",
-  },
-  {
-    korean: "다시 지워진다 해도",
-    english: "Even if it gets erased again",
-  },
-  {
-    korean: "All my life is you",
-    english: "All my life is you",
-  },
-];
-
 // Helper function to format duration from milliseconds to MM:SS
 const formatDuration = (ms: number): string => {
   const minutes = Math.floor(ms / 60000);
@@ -167,37 +24,20 @@ const formatDuration = (ms: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
-export function SongPageContent({
-  data,
-  isFavorite,
-}: {
+export function SongPageContent(props: {
   data: SpotifyTrack;
   isFavorite: boolean;
+  lyrics: string;
 }) {
   const [selectedLine, setSelectedLine] = useState<number>(0);
-  const [selectedWord, setSelectedWord] = useState<number | null>(null);
-  const [isStarred, setIsStarred] = useState(isFavorite);
+  const [isStarred, setIsStarred] = useState(props.isFavorite);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
   const [message, setMessage] = useState("");
   const { toast } = useToast();
   const selectedLineRef = useRef<HTMLButtonElement>(null);
 
-  // Check if song is already favorite on component mount
-  // useEffect(() => {
-  //   const checkFavoriteStatus = async () => {
-  //     if (session?.user?.email) {
-  //       try {
-  //         const isFavorite = await checkIsFavorite(data.id, session.user.email);
-  //         setIsStarred(isFavorite);
-  //       } catch (error) {
-  //         console.error("Error checking favorite status:", error);
-  //       }
-  //     }
-  //   };
-
-  //   checkFavoriteStatus();
-  // }, [data.id, session?.user?.email]);
+  const lyricsLines = props.lyrics.split("\n");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -217,34 +57,15 @@ export function SongPageContent({
       if (e.key === "ArrowUp") {
         e.preventDefault();
         setSelectedLine((prev) => Math.max(0, prev - 1));
-        setSelectedWord(null);
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedLine((prev) => Math.min(lyrics.length - 1, prev + 1));
-        setSelectedWord(null);
-      } else if (e.key === "ArrowLeft") {
-        e.preventDefault();
-        const words = lyrics[selectedLine].korean.split(" ");
-        setSelectedWord((prev) => {
-          if (prev === null) return words.length - 1;
-          return Math.max(0, prev - 1);
-        });
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
-        const words = lyrics[selectedLine].korean.split(" ");
-        setSelectedWord((prev) => {
-          if (prev === null) return 0;
-          return Math.min(words.length - 1, prev + 1);
-        });
-      } else if (e.key === "Escape") {
-        e.preventDefault();
-        setSelectedWord(null);
+        setSelectedLine((prev) => Math.min(lyricsLines.length - 1, prev + 1));
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [selectedLine]);
+  }, [lyricsLines.length]);
 
   useEffect(() => {
     if (selectedLineRef.current) {
@@ -256,16 +77,6 @@ export function SongPageContent({
   }, [selectedLine]);
 
   const handleStar = async () => {
-    // if (!session || !session.user?.email) {
-    //   toast({
-    //     title: "Not logged in",
-    //     description: "Please log in to favorite songs",
-    //     variant: "destructive",
-    //     duration: 3000,
-    //   });
-    //   return;
-    // }
-
     try {
       const newStatus = !isStarred;
       setIsStarred(newStatus);
@@ -289,7 +100,7 @@ export function SongPageContent({
       const userEmail = sessionData.user.email as string;
 
       await toggleFavorite({
-        track: data,
+        track: props.data,
         email: userEmail,
         operation: newStatus ? "add" : "remove",
       });
@@ -318,10 +129,11 @@ export function SongPageContent({
           <div className="max-w-7xl mx-auto flex items-center justify-between">
             <div className="flex items-center gap-3">
               <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center overflow-hidden">
-                {data.album?.images && data.album.images.length > 0 ? (
+                {props.data.album?.images &&
+                props.data.album.images.length > 0 ? (
                   <img
-                    src={data.album.images[0].url}
-                    alt={`${data.album.name} cover`}
+                    src={props.data.album.images[0].url}
+                    alt={`${props.data.album.name} cover`}
                     className="w-full h-full object-cover"
                   />
                 ) : (
@@ -329,9 +141,9 @@ export function SongPageContent({
                 )}
               </div>
               <div>
-                <div className="font-medium">{data.name}</div>
+                <div className="font-medium">{props.data.name}</div>
                 <div className="text-sm text-zinc-500">
-                  {data.artists[0].name}
+                  {props.data.artists[0].name}
                 </div>
               </div>
             </div>
@@ -354,6 +166,7 @@ export function SongPageContent({
           </div>
         </div>
       )}
+
       <div className="max-w-7xl mx-auto space-y-6 pb-32">
         <div
           id="main-header"
@@ -361,10 +174,11 @@ export function SongPageContent({
         >
           <div className="flex flex-col md:flex-row gap-6">
             <div className="relative w-24 h-24 shrink-0 rounded-xl overflow-hidden">
-              {data.album?.images && data.album.images.length > 0 ? (
+              {props.data.album?.images &&
+              props.data.album.images.length > 0 ? (
                 <img
-                  src={data.album.images[0].url}
-                  alt={`${data.album.name} cover`}
+                  src={props.data.album.images[0].url}
+                  alt={`${props.data.album.name} cover`}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -379,8 +193,10 @@ export function SongPageContent({
             </div>
             <div className="flex flex-col justify-between py-1">
               <div className="mb-3">
-                <h1 className="text-2xl font-bold">{data.name}</h1>
-                <p className="text-zinc-500 mt-1">{data.artists[0].name}</p>
+                <h1 className="text-2xl font-bold">{props.data.name}</h1>
+                <p className="text-zinc-500 mt-1">
+                  {props.data.artists[0].name}
+                </p>
               </div>
               <div className="flex items-center gap-3">
                 <Button
@@ -402,9 +218,9 @@ export function SongPageContent({
                 <Separator orientation="vertical" className="h-8" />
                 <div className="text-sm text-zinc-500">
                   <span className="font-medium">
-                    {formatDuration(data.duration_ms)}
+                    {formatDuration(props.data.duration_ms)}
                   </span>{" "}
-                  • {data.album?.name}
+                  • {props.data.album?.name}
                 </div>
               </div>
             </div>
@@ -415,23 +231,18 @@ export function SongPageContent({
           <Card className="border-none backdrop-blur-sm shadow-none">
             <CardContent className="p-8">
               <div className="space-y-4">
-                {lyrics.map((line, index) => (
+                {lyricsLines.map((line, index) => (
                   <button
                     key={index}
                     ref={selectedLine === index ? selectedLineRef : null}
-                    onClick={() => {
-                      setSelectedLine(index);
-                      setSelectedWord(null);
-                    }}
+                    onClick={() => setSelectedLine(index)}
                     className={`w-full text-left transition-colors ${
                       selectedLine === index
                         ? "text-zinc-900"
                         : "text-zinc-400 hover:text-zinc-600"
                     }`}
                   >
-                    <p className="text-2xl leading-relaxed font-bold">
-                      {line.korean}
-                    </p>
+                    <p className="text-2xl leading-relaxed font-bold">{line}</p>
                   </button>
                 ))}
               </div>
@@ -442,46 +253,8 @@ export function SongPageContent({
             <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-6">
               <CardContent className="p-8">
                 <div className="space-y-4">
-                  <div className="text-3xl font-semibold flex items-center justify-between">
-                    <div className="flex flex-wrap gap-1 items-baseline">
-                      {lyrics[selectedLine].korean
-                        .split(" ")
-                        .map((word, index, array) => (
-                          <>
-                            <button
-                              key={index}
-                              onClick={() => setSelectedWord(index)}
-                              className={`transition-colors relative hover:text-yellow-700/70 ${
-                                selectedWord === index
-                                  ? "text-yellow-700 font-semibold"
-                                  : ""
-                              }`}
-                            >
-                              {selectedWord === index && (
-                                <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
-                              )}
-                              <span className="relative">{word}</span>
-                            </button>
-                            {index < array.length - 1 && (
-                              <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
-                            )}
-                          </>
-                        ))}
-                    </div>
-                    {selectedWord !== null && (
-                      <button
-                        onClick={() => setSelectedWord(null)}
-                        className="p-1.5 hover:bg-purple-50 rounded-lg ml-2 flex items-center gap-1.5 text-sm text-zinc-500 hover:text-purple-500"
-                      >
-                        <span>Unselect</span>
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                  <div className="min-h-[100px] flex items-center justify-center rounded-lg bg-purple-50/50 p-6">
-                    <div className="text-lg text-zinc-700">
-                      {lyrics[selectedLine].english}
-                    </div>
+                  <div className="text-3xl font-semibold">
+                    {lyricsLines[selectedLine]}
                   </div>
                   <div className="flex justify-end">
                     <Button
@@ -514,23 +287,6 @@ export function SongPageContent({
                         ↓
                       </kbd>
                     </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Navigate words</span>
-                    <div className="flex gap-1">
-                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
-                        ←
-                      </kbd>
-                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
-                        →
-                      </kbd>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Clear selection</span>
-                    <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
-                      Esc
-                    </kbd>
                   </div>
                 </div>
               </CardContent>
@@ -579,14 +335,14 @@ export function SongPageContent({
         </SheetContent>
       </Sheet>
 
-      <div className="fixed bottom-14 left-0 right-0 p-4 md:p-6">
+      <div className="fixed bottom-14 left-0 right-0 p-4 md:p-6 pointer-events-none">
         <div className="max-w-7xl mx-auto">
-          <div className="w-1/2 md:ml-auto">
+          <div className="w-1/2 md:ml-auto pointer-events-auto">
             <Card className="border-none bg-white/95 backdrop-blur-sm shadow-xl">
               <CardContent className="p-0">
                 <iframe
                   style={{ borderRadius: "12px" }}
-                  src={`https://open.spotify.com/embed/track/${data.id}?utm_source=generator`}
+                  src={`https://open.spotify.com/embed/track/${props.data.id}?utm_source=generator`}
                   width="100%"
                   height="152"
                   frameBorder="0"
