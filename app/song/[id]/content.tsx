@@ -30,6 +30,7 @@ export function SongPageContent(props: {
   lyrics: string;
 }) {
   const [selectedLine, setSelectedLine] = useState<number>(0);
+  const [selectedWord, setSelectedWord] = useState<number | null>(null);
   const [isStarred, setIsStarred] = useState(props.isFavorite);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -66,6 +67,27 @@ export function SongPageContent(props: {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [lyricsLines.length]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        setSelectedWord((prev) => (prev === null ? 0 : Math.max(0, prev - 1)));
+      } else if (e.key === "ArrowRight") {
+        e.preventDefault();
+        const words = "가려진 오랜 시간이".split(" ");
+        setSelectedWord((prev) =>
+          prev === null ? 0 : Math.min(words.length - 1, prev + 1)
+        );
+      } else if (e.key === "Escape") {
+        e.preventDefault();
+        setSelectedWord(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     if (selectedLineRef.current) {
@@ -253,8 +275,46 @@ export function SongPageContent(props: {
             <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-6">
               <CardContent className="p-8">
                 <div className="space-y-4">
-                  <div className="text-3xl font-semibold">
-                    {lyricsLines[selectedLine]}
+                  <div className="text-3xl font-semibold flex items-center justify-between">
+                    <div className="flex flex-wrap gap-1 items-baseline">
+                      {"가려진 오랜 시간이"
+                        .split(" ")
+                        .map((word, index, array) => (
+                          <>
+                            <button
+                              key={index}
+                              onClick={() => setSelectedWord(index)}
+                              className={`transition-colors relative hover:text-yellow-700/70 ${
+                                selectedWord === index
+                                  ? "text-yellow-700 font-semibold"
+                                  : ""
+                              }`}
+                            >
+                              {selectedWord === index && (
+                                <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
+                              )}
+                              <span className="relative">{word}</span>
+                            </button>
+                            {index < array.length - 1 && (
+                              <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
+                            )}
+                          </>
+                        ))}
+                    </div>
+                    {selectedWord !== null && (
+                      <button
+                        onClick={() => setSelectedWord(null)}
+                        className="p-1.5 hover:bg-purple-50 rounded-lg ml-2 flex items-center gap-1.5 text-sm text-zinc-500 hover:text-purple-500"
+                      >
+                        <span>Unselect</span>
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
+                  <div className="min-h-[100px] flex items-center justify-center rounded-lg bg-purple-50/50 p-6">
+                    <div className="text-lg text-zinc-700">
+                      {lyricsLines[selectedLine]}
+                    </div>
                   </div>
                   <div className="flex justify-end">
                     <Button
@@ -287,6 +347,23 @@ export function SongPageContent(props: {
                         ↓
                       </kbd>
                     </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Navigate words</span>
+                    <div className="flex gap-1">
+                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                        ←
+                      </kbd>
+                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                        →
+                      </kbd>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span>Clear selection</span>
+                    <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                      Esc
+                    </kbd>
                   </div>
                 </div>
               </CardContent>
