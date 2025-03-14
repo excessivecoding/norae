@@ -2,11 +2,8 @@ import { auth } from "@/auth";
 import { SongTabs } from "./song-tabs";
 import { SongList } from "./song-list";
 import { RetryButton } from "./components/retry-button";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { Session } from "next-auth";
 import { getUserFavorites } from "./actions";
-
-export const runtime = "edge";
 
 export default async function Page({
   searchParams,
@@ -136,17 +133,18 @@ async function getSongsByTab(args: { tab: string; session: Session }) {
     // }
 
     if (args.tab === "archives") {
-      const env = getCloudflareContext().env as Env;
-      if (!args.session.user?.email) {
-        throw new Error("Need auth");
-      }
+      return [];
+      // const env = getCloudflareContext().env as Env;
+      // if (!args.session.user?.email) {
+      //   throw new Error("Need auth");
+      // }
 
-      const archivedTracks =
-        (await env.KV.get(`v1/${args.session.user?.email}/archived`, {
-          type: "json",
-        })) || [];
+      // const archivedTracks =
+      //   (await env.KV.get(`v1/${args.session.user?.email}/archived`, {
+      //     type: "json",
+      //   })) || [];
 
-      return archivedTracks;
+      // return archivedTracks;
     }
 
     throw new Error("Invalid tab");

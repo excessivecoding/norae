@@ -3,13 +3,11 @@ import { SongPageContent } from "./content";
 import { hasUserFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 import { Session } from "next-auth";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
+import { getValue, setValue } from "@/lib/cloudflare";
 
 interface Env {
   KV: KVNamespace;
 }
-
-export const runtime = "edge";
 
 export default async function SongPage({ params }: { params: { id: string } }) {
   const session = await auth();
@@ -43,11 +41,9 @@ export default async function SongPage({ params }: { params: { id: string } }) {
 }
 
 async function getLyrics(track: SpotifyTrack) {
-  const env = getCloudflareContext().env as Env;
-
   // Try to get lyrics from KV cache first
   try {
-    const cachedLyrics = await env.KV.get(`lyrics/${track.id}`);
+    const cachedLyrics = await getValue(`lyrics/${track.id}`);
     if (cachedLyrics) {
       console.log("Cache hit for lyrics:", track.id);
       return cachedLyrics;
@@ -137,7 +133,7 @@ async function getLyrics(track: SpotifyTrack) {
   // Store lyrics in KV cache if we successfully got them
   if (cleanedLyrics) {
     try {
-      await env.KV.put(`lyrics/${track.id}`, cleanedLyrics);
+      await setValue(`lyrics/${track.id}`, cleanedLyrics);
       console.log("Cached lyrics for:", track.id);
     } catch (error) {
       console.error("Error writing to KV cache:", error);

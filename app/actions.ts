@@ -1,13 +1,16 @@
 "use server";
 
 import { auth } from "@/auth";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { SpotifyTrack } from "@/app/types/spotify";
+import { getValue, setValue } from "@/lib/cloudflare";
 
 export async function getUserFavorites(email: string) {
-  const env = getCloudflareContext().env as Env;
-  const rawData = await env.KV.get(`v1/${email}/favorites`);
-  return JSON.parse(rawData || "[]") as SpotifyTrack[];
+  try {
+    const response = await getValue(`v1/${email}/favorites`);
+    return response.json() as Promise<SpotifyTrack[]>;
+  } catch (error) {
+    return [] as SpotifyTrack[];
+  }
 }
 
 export async function hasUserFavorite(email: string, trackId: string) {
@@ -22,11 +25,9 @@ export async function addFavorite(track: SpotifyTrack) {
     throw new Error("Unauthorized");
   }
 
-  const env = getCloudflareContext().env as Env;
-
   const favorites = await getUserFavorites(session.user.email);
 
-  const data = await env.KV.put(
+  const data = await setValue(
     `v1/${session.user.email}/favorites`,
     JSON.stringify([...favorites, track])
   );
@@ -41,11 +42,9 @@ export async function removeFavorite(track: SpotifyTrack) {
     throw new Error("Unauthorized");
   }
 
-  const env = getCloudflareContext().env as Env;
-
   const favorites = await getUserFavorites(session.user.email);
 
-  const data = await env.KV.put(
+  const data = await setValue(
     `v1/${session.user.email}/favorites`,
     JSON.stringify(
       favorites.filter((favoriteTrack) => favoriteTrack.id !== track.id)
