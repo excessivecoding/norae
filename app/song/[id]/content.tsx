@@ -18,6 +18,7 @@ import { toggleFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
+import { TranslationResult } from "@/app/translation";
 
 // Helper function to format duration from milliseconds to MM:SS
 const formatDuration = (ms: number): string => {
@@ -26,21 +27,59 @@ const formatDuration = (ms: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
-// New component for interactive lyrics display
 interface InteractiveLyricsProps {
   line: string;
   initialSelectedWord?: number | null;
   onWordSelect?: (index: number | null) => void;
+  songId: string; // Add songId prop to fetch translations
 }
 
 const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
   line,
   initialSelectedWord = null,
   onWordSelect,
+  songId,
 }) => {
   const [selectedWord, setSelectedWord] = useState<number | null>(
     initialSelectedWord
   );
+
+  // Move translation query logic here
+  const { data: translationData, isLoading: isTranslationLoading } = useQuery<
+    TranslationResult[]
+  >({
+    queryKey: ["translation", songId, line],
+    queryFn: async (): Promise<TranslationResult[]> => {
+      if (!line.trim()) return [];
+
+      const response = await fetch("/api/translations", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          songId: songId,
+          text: line,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to fetch translation");
+      }
+
+      return await response.json();
+    },
+    enabled: !!line.trim(), // Only run query if there's a line to translate
+    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    gcTime: 10 * 60 * 1000, // Keep unused data in cache for 10 minutes
+    retry: 1, // Retry once on failure
+  });
+
+  // Extract the translation text for display
+  const translation =
+    translationData && translationData.length > 0
+      ? translationData[0]?.translation
+      : null;
 
   // Handle selecting a word
   const handleWordSelect = (index: number) => {
@@ -78,38 +117,57 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
   }, [line]); // Re-add event listener when line changes
 
   return (
-    <div className="flex flex-wrap gap-1 items-baseline justify-between w-full">
-      <div className="flex flex-wrap gap-1 items-baseline">
-        {line.split(" ").map((word: string, index: number, array: string[]) => (
-          <React.Fragment key={index}>
+    <div className="space-y-4">
+      <div className="text-3xl font-semibold">
+        <div className="flex flex-wrap gap-1 items-baseline justify-between w-full">
+          <div className="flex flex-wrap gap-1 items-baseline">
+            {line
+              .split(" ")
+              .map((word: string, index: number, array: string[]) => (
+                <React.Fragment key={index}>
+                  <button
+                    onClick={() => handleWordSelect(index)}
+                    type="button"
+                    className={`transition-colors relative hover:text-yellow-700/70 ${
+                      selectedWord === index
+                        ? "text-yellow-700 font-semibold"
+                        : ""
+                    }`}
+                  >
+                    {selectedWord === index && (
+                      <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
+                    )}
+                    <span className="relative">{word}</span>
+                  </button>
+                  {index < array.length - 1 && (
+                    <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
+                  )}
+                </React.Fragment>
+              ))}
+          </div>
+
+          {selectedWord !== null && (
             <button
-              onClick={() => handleWordSelect(index)}
-              type="button"
-              className={`transition-colors relative hover:text-yellow-700/70 ${
-                selectedWord === index ? "text-yellow-700 font-semibold" : ""
-              }`}
+              onClick={handleUnselect}
+              className="p-1.5 hover:bg-purple-50 rounded-lg ml-2 flex items-center gap-1.5 text-sm text-zinc-500 hover:text-purple-500"
             >
-              {selectedWord === index && (
-                <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
-              )}
-              <span className="relative">{word}</span>
+              <span>Unselect</span>
+              <X className="w-4 h-4" />
             </button>
-            {index < array.length - 1 && (
-              <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
-            )}
-          </React.Fragment>
-        ))}
+          )}
+        </div>
       </div>
 
-      {selectedWord !== null && (
-        <button
-          onClick={handleUnselect}
-          className="p-1.5 hover:bg-purple-50 rounded-lg ml-2 flex items-center gap-1.5 text-sm text-zinc-500 hover:text-purple-500"
-        >
-          <span>Unselect</span>
-          <X className="w-4 h-4" />
-        </button>
-      )}
+      {/* Translation display section */}
+      <div className="min-h-[100px] flex items-center justify-center rounded-lg bg-purple-50/50 p-6">
+        {isTranslationLoading ? (
+          <div className="text-lg text-zinc-500 italic">Translating...</div>
+        ) : translation ? (
+          <div className="text-lg text-zinc-700">{translation}</div>
+        ) : (
+          <div className="text-lg text-zinc-700">{line}</div>
+        )}
+      </div>
     </div>
   );
 };
@@ -127,63 +185,10 @@ export function SongPageContent(props: {
   const { toast } = useToast();
   const selectedLineRef = useRef<HTMLButtonElement>(null);
 
-  // load lyrics translation
+  // load lyrics translation - moved to InteractiveLyrics component
   const currentLine = props.lyrics[selectedLine] || "";
 
-  // Define the translation response type
-  interface TranslationResult {
-    source: string;
-    translation: string;
-    breakdown: Array<{
-      text: string;
-      translation?: string;
-      explanation?: string;
-      infinitive?: {
-        text: string;
-        translation: string;
-        explanation: string;
-      };
-      is_particle?: boolean;
-    }>;
-  }
-
-  const { data: translationData, isLoading: isTranslationLoading } = useQuery<
-    TranslationResult[]
-  >({
-    queryKey: ["translation", props.data.id, currentLine],
-    queryFn: async (): Promise<TranslationResult[]> => {
-      if (!currentLine.trim()) return [];
-
-      const response = await fetch("/api/translations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          songId: props.data.id,
-          text: currentLine,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to fetch translation");
-      }
-
-      return await response.json();
-    },
-    enabled: !!currentLine.trim(), // Only run query if there's a line to translate
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep unused data in cache for 10 minutes
-    retry: 1, // Retry once on failure
-  });
-
-  // Extract the translation text for display
-  const translation =
-    translationData && translationData.length > 0
-      ? translationData[0]?.translation
-      : null;
-
-  console.log(translation);
+  // Translation logic moved to InteractiveLyrics component
 
   useEffect(() => {
     const handleScroll = () => {
@@ -399,24 +404,10 @@ export function SongPageContent(props: {
             <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-6">
               <CardContent className="p-8">
                 <div className="space-y-4">
-                  <div className="text-3xl font-semibold">
-                    <InteractiveLyrics
-                      line={props.lyrics[selectedLine] || ""}
-                    />
-                  </div>
-                  <div className="min-h-[100px] flex items-center justify-center rounded-lg bg-purple-50/50 p-6">
-                    {isTranslationLoading ? (
-                      <div className="text-lg text-zinc-500 italic">
-                        Translating...
-                      </div>
-                    ) : translation ? (
-                      <div className="text-lg text-zinc-700">{translation}</div>
-                    ) : (
-                      <div className="text-lg text-zinc-700">
-                        {props.lyrics[selectedLine] || ""}
-                      </div>
-                    )}
-                  </div>
+                  <InteractiveLyrics
+                    line={props.lyrics[selectedLine] || ""}
+                    songId={props.data.id}
+                  />
                   <div className="flex justify-end">
                     <Button
                       variant="outline"
