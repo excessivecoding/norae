@@ -45,46 +45,37 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
   );
 
   // Move translation query logic here
-  const { data: translationData, isLoading: isTranslationLoading } = useQuery<
-    TranslationResult[]
-  >({
-    queryKey: ["translation", songId, line],
-    queryFn: async (): Promise<TranslationResult[]> => {
-      if (!line.trim()) return [];
+  const { data: translationData, isLoading: isTranslationLoading } =
+    useQuery<TranslationResult>({
+      queryKey: ["translation", songId, line],
+      queryFn: async (): Promise<TranslationResult> => {
+        const response = await fetch("/api/translations", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            songId: songId,
+            text: line,
+          }),
+        });
 
-      const response = await fetch("/api/translations", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          songId: songId,
-          text: line,
-        }),
-      });
+        if (!response.ok) {
+          throw new Error("Failed to fetch translation");
+        }
 
-      if (!response.ok) {
-        throw new Error("Failed to fetch translation");
-      }
-
-      return await response.json();
-    },
-    enabled: !!line.trim(), // Only run query if there's a line to translate
-    staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
-    gcTime: 10 * 60 * 1000, // Keep unused data in cache for 10 minutes
-    retry: 1, // Retry once on failure
-  });
+        return await response.json();
+      },
+      enabled: !!line.trim(), // Only run query if there's a line to translate
+      staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+      gcTime: 10 * 60 * 1000, // Keep unused data in cache for 10 minutes
+      retry: 1, // Retry once on failure
+    });
 
   // Extract the breakdown and translation for display
-  const breakdown =
-    translationData && translationData.length > 0
-      ? translationData[0]?.breakdown || []
-      : [];
+  const breakdown = translationData ? translationData.breakdown : [];
 
-  const translation =
-    translationData && translationData.length > 0
-      ? translationData[0]?.translation
-      : null;
+  const translation = translationData ? translationData.translation : null;
 
   // Handle selecting a breakdown element
   const handleWordSelect = (index: number) => {

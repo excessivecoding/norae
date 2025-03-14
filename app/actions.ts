@@ -5,7 +5,7 @@ import { SpotifyTrack } from "@/app/types/spotify";
 import { getValue, setValue } from "@/lib/cloudflare";
 
 export async function getUserFavorites(email: string) {
-  const value = await getValue(`v1/${email}/favorites`);
+  const value = (await getValue(`v1/${email}/favorites`)) || "[]";
   return JSON.parse(value) as SpotifyTrack[];
 }
 

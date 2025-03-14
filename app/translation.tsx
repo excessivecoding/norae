@@ -1,5 +1,5 @@
 import { openai } from "@ai-sdk/openai";
-import { generateObject, generateText } from "ai";
+import { generateObject } from "ai";
 import { z } from "zod";
 
 export type TranslationResult = z.infer<typeof translationResultSchema>;
@@ -299,9 +299,7 @@ function userPrompt(language: string, text: string, context?: string) {
 export async function translateFromKorean(text: string) {
   const { object } = await generateObject({
     model: openai("gpt-4-turbo"),
-    schema: z.object({
-      results: z.array(translationResultSchema),
-    }),
+    schema: translationResultSchema,
     temperature: 0,
     messages: [
       {
@@ -315,7 +313,7 @@ export async function translateFromKorean(text: string) {
     ],
   });
 
-  return object.results;
+  return object;
 }
 
 // export const translateFromKorean = createServerFn()
