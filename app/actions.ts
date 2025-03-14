@@ -5,16 +5,13 @@ import { SpotifyTrack } from "@/app/types/spotify";
 import { getValue, setValue } from "@/lib/cloudflare";
 
 export async function getUserFavorites(email: string) {
-  try {
-    const response = await getValue(`v1/${email}/favorites`);
-    return response.json() as Promise<SpotifyTrack[]>;
-  } catch (error) {
-    return [] as SpotifyTrack[];
-  }
+  const value = await getValue(`v1/${email}/favorites`);
+  return JSON.parse(value) as SpotifyTrack[];
 }
 
 export async function hasUserFavorite(email: string, trackId: string) {
   const favorites = await getUserFavorites(email);
+  console.log(email, favorites);
   return favorites.some((favorite) => favorite.id === trackId);
 }
 
