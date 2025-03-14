@@ -288,15 +288,15 @@ OUTPUT: ${JSON.stringify(exampleFromKoreanTranslationOutput)}
 ${breakdownRules}
 `;
 
-function userPrompt(language: string, text: string[], context?: string) {
+function userPrompt(language: string, text: string, context?: string) {
   return `
   <target_language>${language}</target_language>
-  <text>${text.join("\n")}</text>
+  <text>${text}</text>
   <context>${context || "no specific context"}</context>
   `;
 }
 
-export async function translateFromKorean(text: string[]) {
+export async function translateFromKorean(text: string) {
   const { object } = await generateObject({
     model: openai("gpt-4-turbo"),
     schema: z.object({
