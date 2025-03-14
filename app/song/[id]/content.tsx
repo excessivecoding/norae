@@ -75,13 +75,18 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
     retry: 1, // Retry once on failure
   });
 
-  // Extract the translation text for display
+  // Extract the breakdown and translation for display
+  const breakdown =
+    translationData && translationData.length > 0
+      ? translationData[0]?.breakdown || []
+      : [];
+
   const translation =
     translationData && translationData.length > 0
       ? translationData[0]?.translation
       : null;
 
-  // Handle selecting a word
+  // Handle selecting a breakdown element
   const handleWordSelect = (index: number) => {
     const newSelectedWord = selectedWord === index ? null : index;
     setSelectedWord(newSelectedWord);
@@ -99,51 +104,125 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
         e.preventDefault();
-        setSelectedWord((prev) => (prev === null ? 0 : Math.max(0, prev - 1)));
+        // Find the previous non-space element
+        if (breakdown.length > 0) {
+          setSelectedWord((prev) => {
+            if (prev === null) return findFirstNonSpaceIndex(breakdown);
+
+            // Move backwards and skip spaces
+            let newIndex = prev - 1;
+            while (newIndex >= 0 && breakdown[newIndex].text === " ") {
+              newIndex--;
+            }
+            return Math.max(0, newIndex);
+          });
+        } else {
+          setSelectedWord((prev) =>
+            prev === null ? 0 : Math.max(0, prev - 1)
+          );
+        }
       } else if (e.key === "ArrowRight") {
         e.preventDefault();
-        const words = line.split(" ");
-        setSelectedWord((prev) =>
-          prev === null ? 0 : Math.min(words.length - 1, prev + 1)
-        );
+        // Find the next non-space element
+        if (breakdown.length > 0) {
+          setSelectedWord((prev) => {
+            if (prev === null) return findFirstNonSpaceIndex(breakdown);
+
+            // Move forwards and skip spaces
+            let newIndex = prev + 1;
+            while (
+              newIndex < breakdown.length &&
+              breakdown[newIndex].text === " "
+            ) {
+              newIndex++;
+            }
+            return newIndex < breakdown.length ? newIndex : prev;
+          });
+        } else {
+          const elementsCount = line.split(" ").length;
+          setSelectedWord((prev) =>
+            prev === null ? 0 : Math.min(elementsCount - 1, prev + 1)
+          );
+        }
       } else if (e.key === "Escape") {
         e.preventDefault();
         handleUnselect();
       }
     };
 
+    // Helper function to find the first non-space element
+    const findFirstNonSpaceIndex = (elements: any[]) => {
+      const index = elements.findIndex((element) => element.text !== " ");
+      return index >= 0 ? index : 0;
+    };
+
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [line]); // Re-add event listener when line changes
+  }, [line, breakdown]); // Re-add event listener when line or breakdown changes
+
+  // Get current selected element details
+  const selectedElement =
+    selectedWord !== null ? breakdown[selectedWord] : null;
 
   return (
     <div className="space-y-4">
       <div className="text-3xl font-semibold">
         <div className="flex flex-wrap gap-1 items-baseline justify-between w-full">
           <div className="flex flex-wrap gap-1 items-baseline">
-            {line
-              .split(" ")
-              .map((word: string, index: number, array: string[]) => (
-                <React.Fragment key={index}>
-                  <button
-                    onClick={() => handleWordSelect(index)}
-                    type="button"
-                    className={`transition-colors relative hover:text-yellow-700/70 ${
-                      selectedWord === index
-                        ? "text-yellow-700 font-semibold"
-                        : ""
-                    }`}
-                  >
-                    {selectedWord === index && (
-                      <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
-                    )}
-                    <span className="relative">{word}</span>
-                  </button>
-                  {index < array.length - 1 && (
-                    <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
-                  )}
-                </React.Fragment>
-              ))}
+            {breakdown.length > 0
+              ? // Use breakdown data when available
+                breakdown.map((element, index) => {
+                  if (element.text === " ") {
+                    return (
+                      <span
+                        key={index}
+                        className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200"
+                      />
+                    );
+                  }
+
+                  return (
+                    <button
+                      key={index}
+                      onClick={() => handleWordSelect(index)}
+                      type="button"
+                      className={`transition-colors relative hover:text-yellow-700/70 ${
+                        selectedWord === index
+                          ? "text-yellow-700 font-semibold"
+                          : ""
+                      }`}
+                    >
+                      {selectedWord === index && (
+                        <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
+                      )}
+                      <span className="relative">{element.text}</span>
+                    </button>
+                  );
+                })
+              : // Fallback to splitting the line
+                line
+                  .split(" ")
+                  .map((word: string, index: number, array: string[]) => (
+                    <React.Fragment key={index}>
+                      <button
+                        onClick={() => handleWordSelect(index)}
+                        type="button"
+                        className={`transition-colors relative hover:text-yellow-700/70 ${
+                          selectedWord === index
+                            ? "text-yellow-700 font-semibold"
+                            : ""
+                        }`}
+                      >
+                        {selectedWord === index && (
+                          <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
+                        )}
+                        <span className="relative">{word}</span>
+                      </button>
+                      {index < array.length - 1 && (
+                        <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
+                      )}
+                    </React.Fragment>
+                  ))}
           </div>
 
           {selectedWord !== null && (
@@ -162,7 +241,29 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
       <div className="min-h-[100px] flex items-center justify-center rounded-lg bg-purple-50/50 p-6">
         {isTranslationLoading ? (
           <div className="text-lg text-zinc-500 italic">Translating...</div>
+        ) : selectedElement ? (
+          // Show selected element details when available
+          <div className="flex flex-col gap-2 w-full">
+            <div className="text-lg text-zinc-700 font-semibold">
+              {selectedElement.translation || translation}
+            </div>
+            {selectedElement.explanation && (
+              <div className="text-sm text-zinc-600">
+                {selectedElement.explanation}
+              </div>
+            )}
+            {selectedElement.infinitive && (
+              <div className="mt-2 p-3 bg-purple-50 rounded-lg">
+                <div className="font-medium text-purple-700">Root Form:</div>
+                <div className="flex justify-between">
+                  <div>{selectedElement.infinitive.text}</div>
+                  <div>{selectedElement.infinitive.translation}</div>
+                </div>
+              </div>
+            )}
+          </div>
         ) : translation ? (
+          // Show full translation when no element is selected
           <div className="text-lg text-zinc-700">{translation}</div>
         ) : (
           <div className="text-lg text-zinc-700">{line}</div>
