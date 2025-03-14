@@ -27,7 +27,7 @@ const formatDuration = (ms: number): string => {
 export function SongPageContent(props: {
   data: SpotifyTrack;
   isFavorite: boolean;
-  lyrics: string;
+  lyrics: string[];
 }) {
   const [selectedLine, setSelectedLine] = useState<number>(0);
   const [selectedWord, setSelectedWord] = useState<number | null>(null);
@@ -37,8 +37,6 @@ export function SongPageContent(props: {
   const [message, setMessage] = useState("");
   const { toast } = useToast();
   const selectedLineRef = useRef<HTMLButtonElement>(null);
-
-  const lyricsLines = props.lyrics.split("\n");
 
   useEffect(() => {
     const handleScroll = () => {
@@ -60,13 +58,13 @@ export function SongPageContent(props: {
         setSelectedLine((prev) => Math.max(0, prev - 1));
       } else if (e.key === "ArrowDown") {
         e.preventDefault();
-        setSelectedLine((prev) => Math.min(lyricsLines.length - 1, prev + 1));
+        setSelectedLine((prev) => Math.min(props.lyrics.length - 1, prev + 1));
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [lyricsLines.length]);
+  }, [props.lyrics.length]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -253,7 +251,7 @@ export function SongPageContent(props: {
           <Card className="border-none backdrop-blur-sm shadow-none">
             <CardContent className="p-8">
               <div className="space-y-4">
-                {lyricsLines.map((line, index) => (
+                {props.lyrics.map((line, index) => (
                   <button
                     key={index}
                     ref={selectedLine === index ? selectedLineRef : null}
@@ -282,8 +280,8 @@ export function SongPageContent(props: {
                         .map((word, index, array) => (
                           <>
                             <button
-                              key={index}
                               onClick={() => setSelectedWord(index)}
+                              type="button"
                               className={`transition-colors relative hover:text-yellow-700/70 ${
                                 selectedWord === index
                                   ? "text-yellow-700 font-semibold"
@@ -313,7 +311,7 @@ export function SongPageContent(props: {
                   </div>
                   <div className="min-h-[100px] flex items-center justify-center rounded-lg bg-purple-50/50 p-6">
                     <div className="text-lg text-zinc-700">
-                      {lyricsLines[selectedLine]}
+                      {props.lyrics[selectedLine]}
                     </div>
                   </div>
                   <div className="flex justify-end">

@@ -11,7 +11,6 @@ export async function getUserFavorites(email: string) {
 
 export async function hasUserFavorite(email: string, trackId: string) {
   const favorites = await getUserFavorites(email);
-  console.log(email, favorites);
   return favorites.some((favorite) => favorite.id === trackId);
 }
 

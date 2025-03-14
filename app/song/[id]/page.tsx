@@ -2,12 +2,8 @@ import { auth } from "@/auth";
 import { SongPageContent } from "./content";
 import { hasUserFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
-import { Session } from "next-auth";
 import { getValue, setValue } from "@/lib/cloudflare";
-
-interface Env {
-  KV: KVNamespace;
-}
+import { translateFromKorean } from "@/app/translation";
 
 export default async function SongPage({ params }: { params: { id: string } }) {
   const session = await auth();
@@ -33,7 +29,9 @@ export default async function SongPage({ params }: { params: { id: string } }) {
 
   const isFavorite = await hasUserFavorite(session.user.email, params.id);
 
-  const lyrics = (await getLyrics(data)) || "";
+  const lyrics = ((await getLyrics(data)) || "").split("\n");
+
+  console.log(await translateFromKorean(lyrics));
 
   return (
     <SongPageContent data={data} isFavorite={isFavorite} lyrics={lyrics} />
