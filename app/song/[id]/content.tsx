@@ -44,6 +44,11 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
     initialSelectedWord
   );
 
+  // Reset selected word when line changes
+  useEffect(() => {
+    setSelectedWord(null);
+  }, [line]);
+
   // Move translation query logic here
   const { data: translationData, isLoading: isTranslationLoading } =
     useQuery<TranslationResult>({
