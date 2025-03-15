@@ -1,5 +1,5 @@
-import { translateFromKorean } from "@/app/translation";
-import { getValue, setValue } from "@/lib/cloudflare";
+import { redis } from "@/app/redis";
+import { translateFromKorean, TranslationResult } from "@/app/translation";
 import { z } from "zod";
 
 export async function POST(request: Request) {
@@ -21,18 +21,20 @@ export async function POST(request: Request) {
   try {
     // Try to get cached translation first
     const cacheKey = `translations:${songId}/${text}`;
-    const cachedTranslation = await getValue(cacheKey);
+    const cachedTranslation = (await redis.get(cacheKey)) as Awaited<
+      ReturnType<typeof translateFromKorean>
+    >;
 
     if (cachedTranslation) {
       console.log("Cache hit for translation:", songId, text.substring(0, 20));
-      return Response.json(JSON.parse(cachedTranslation));
+      return Response.json(cachedTranslation);
     }
 
     // If not cached, call the translation service
     const translation = await translateFromKorean(text);
 
     // Store in cache for future requests
-    await setValue(cacheKey, JSON.stringify(translation));
+    await redis.set(cacheKey, translation);
     console.log("Cached translation for:", songId, text.substring(0, 20));
 
     return Response.json(translation);

@@ -2,11 +2,11 @@
 
 import { auth } from "@/auth";
 import { SpotifyTrack } from "@/app/types/spotify";
-import { getValue, setValue } from "@/lib/cloudflare";
+import { redis } from "./redis";
 
 export async function getUserFavorites(email: string) {
-  const value = (await getValue(`v1/${email}/favorites`)) || "[]";
-  return JSON.parse(value) as SpotifyTrack[];
+  const value = (await redis.get(`v1/${email}/favorites`)) || [];
+  return value as SpotifyTrack[];
 }
 
 export async function hasUserFavorite(email: string, trackId: string) {
@@ -23,10 +23,10 @@ export async function addFavorite(track: SpotifyTrack) {
 
   const favorites = await getUserFavorites(session.user.email);
 
-  const data = await setValue(
-    `v1/${session.user.email}/favorites`,
-    JSON.stringify([...favorites, track])
-  );
+  const data = await redis.set(`v1/${session.user.email}/favorites`, [
+    ...favorites,
+    track,
+  ]);
 
   return { status: "success" };
 }
@@ -40,11 +40,9 @@ export async function removeFavorite(track: SpotifyTrack) {
 
   const favorites = await getUserFavorites(session.user.email);
 
-  const data = await setValue(
+  const data = await redis.set(
     `v1/${session.user.email}/favorites`,
-    JSON.stringify(
-      favorites.filter((favoriteTrack) => favoriteTrack.id !== track.id)
-    )
+    favorites.filter((favoriteTrack) => favoriteTrack.id !== track.id)
   );
 
   return { status: "success" };
