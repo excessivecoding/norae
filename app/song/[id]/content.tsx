@@ -6,11 +6,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import {
-  Sheet,
-  SheetContent,
-  SheetHeader,
-  SheetTitle,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
@@ -19,6 +20,7 @@ import { SpotifyTrack } from "@/app/types/spotify";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TranslationResult } from "@/app/translation";
+import { Textarea } from "@/components/ui/textarea";
 
 // Helper function to format duration from milliseconds to MM:SS
 const formatDuration = (ms: number): string => {
@@ -98,8 +100,8 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
   // Add keyboard navigation inside the component
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      event.preventDefault();
       if (event.key === "ArrowLeft") {
+        event.preventDefault();
         // Find the previous non-space element
         if (breakdown.length > 0) {
           setSelectedWord((prev) => {
@@ -113,11 +115,13 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
             return Math.max(0, newIndex);
           });
         } else {
+          event.preventDefault();
           setSelectedWord((prev) =>
             prev === null ? 0 : Math.max(0, prev - 1)
           );
         }
       } else if (event.key === "ArrowRight") {
+        event.preventDefault();
         // Find the next non-space element
         if (breakdown.length > 0) {
           setSelectedWord((prev) => {
@@ -134,12 +138,14 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
             return newIndex < breakdown.length ? newIndex : prev;
           });
         } else {
+          event.preventDefault();
           const elementsCount = line.split(" ").length;
           setSelectedWord((prev) =>
             prev === null ? 0 : Math.min(elementsCount - 1, prev + 1)
           );
         }
       } else if (event.key === "Escape") {
+        event.preventDefault();
         handleUnselect();
       }
     };
@@ -275,10 +281,11 @@ export function SongPageContent(props: {
   const [selectedLine, setSelectedLine] = useState<number>(0);
   const [isStarred, setIsStarred] = useState(props.isFavorite);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [isChatOpen, setIsChatOpen] = useState(false);
-  const [message, setMessage] = useState("");
+  const [isQuestionInputVisible, setIsQuestionInputVisible] = useState(false);
   const { toast } = useToast();
   const selectedLineRef = useRef<HTMLButtonElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const queryClient = useQueryClient();
 
   // load lyrics translation - moved to InteractiveLyrics component
@@ -379,6 +386,13 @@ export function SongPageContent(props: {
     }
   }, [selectedLine]);
 
+  // Use this effect to focus the textarea when it becomes visible
+  useEffect(() => {
+    if (isQuestionInputVisible && questionInputRef.current) {
+      questionInputRef.current.focus();
+    }
+  }, [isQuestionInputVisible]);
+
   const handleStar = async () => {
     try {
       const newStatus = !isStarred;
@@ -423,6 +437,52 @@ export function SongPageContent(props: {
         duration: 3000,
       });
     }
+  };
+
+  const handleSubmitQuestion = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    // Use FormData to get the question value
+    const formData = new FormData(e.currentTarget);
+    const questionValue = formData.get("question") as string;
+
+    // Only proceed if there's an actual question
+    if (!questionValue?.trim()) {
+      toast({
+        description: "Please enter a question",
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+
+    // Create a context-rich prompt that includes information about the song
+    const enrichedPrompt = `Help me understand this song: "${props.data.name}" by ${props.data.artists[0].name}. 
+Current lyric line: "${props.lyrics[selectedLine]}". 
+My question: ${questionValue}`;
+
+    // Encode the prompt for use in a URL
+    const encodedPrompt = encodeURIComponent(enrichedPrompt);
+
+    // Construct the ChatGPT URL with the gpt-4 model and the encoded prompt
+    const chatGptUrl = `https://chat.openai.com/?model=gpt-4&q=${encodedPrompt}`;
+
+    // Show a notification
+    toast({
+      description: "Opening ChatGPT with your question",
+      duration: 2000,
+    });
+
+    // Reset the form
+    if (formRef.current) {
+      formRef.current.reset();
+    }
+
+    // Hide the question input
+    setIsQuestionInputVisible(false);
+
+    // Open ChatGPT in a new tab
+    window.open(chatGptUrl, "_blank");
   };
 
   return (
@@ -561,15 +621,46 @@ export function SongPageContent(props: {
                     songId={props.data.id}
                   />
                   <div className="flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="gap-2"
-                      onClick={() => setIsChatOpen(true)}
-                    >
-                      <Bot className="w-4 h-4" />
-                      Ask GPT
-                    </Button>
+                    {!isQuestionInputVisible ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="gap-2"
+                        onClick={() => setIsQuestionInputVisible(true)}
+                      >
+                        <Bot className="w-4 h-4" />
+                        Ask GPT
+                      </Button>
+                    ) : (
+                      <div className="w-full space-y-3">
+                        <form
+                          ref={formRef}
+                          onSubmit={handleSubmitQuestion}
+                          className="space-y-3"
+                        >
+                          <Textarea
+                            ref={questionInputRef}
+                            name="question"
+                            placeholder="Ask any question about the lyrics, meaning, translation, or cultural context of this song..."
+                            className="w-full min-h-[100px] resize-none"
+                          />
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setIsQuestionInputVisible(false)}
+                            >
+                              Cancel
+                            </Button>
+                            <Button type="submit" size="sm" className="gap-2">
+                              <Send className="w-3 h-3" />
+                              Submit
+                            </Button>
+                          </div>
+                        </form>
+                      </div>
+                    )}
                   </div>
                 </div>
               </CardContent>
@@ -615,46 +706,6 @@ export function SongPageContent(props: {
           </div>
         </div>
       </div>
-
-      <Sheet open={isChatOpen} onOpenChange={setIsChatOpen}>
-        <SheetContent
-          side="left"
-          className={cn(
-            "!w-[50%] !max-w-none p-0",
-            "data-[state=open]:duration-500 data-[state=closed]:duration-300",
-            "data-[state=closed]:slide-out-to-left data-[state=open]:slide-in-from-left"
-          )}
-        >
-          <div className="flex h-full flex-col">
-            <SheetHeader className="p-6 border-b">
-              <SheetTitle>Chat with GPT</SheetTitle>
-            </SheetHeader>
-            <div className="flex-1 overflow-y-auto p-6">
-              {/* Chat messages will go here */}
-            </div>
-            <div className="border-t p-4">
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  // Handle message submission
-                  setMessage("");
-                }}
-                className="flex gap-2"
-              >
-                <Input
-                  placeholder="Type your message..."
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  className="flex-1"
-                />
-                <Button type="submit" size="icon">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </form>
-            </div>
-          </div>
-        </SheetContent>
-      </Sheet>
 
       <div className="fixed bottom-14 left-0 right-0 p-4 md:p-6 pointer-events-none">
         <div className="max-w-7xl mx-auto">
