@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 import { toggleFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 import React from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { TranslationResult } from "@/app/translation";
 
 // Helper function to format duration from milliseconds to MM:SS
@@ -97,9 +97,9 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
 
   // Add keyboard navigation inside the component
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowLeft") {
-        e.preventDefault();
+    const handleKeyDown = (event: KeyboardEvent) => {
+      event.preventDefault();
+      if (event.key === "ArrowLeft") {
         // Find the previous non-space element
         if (breakdown.length > 0) {
           setSelectedWord((prev) => {
@@ -117,8 +117,7 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
             prev === null ? 0 : Math.max(0, prev - 1)
           );
         }
-      } else if (e.key === "ArrowRight") {
-        e.preventDefault();
+      } else if (event.key === "ArrowRight") {
         // Find the next non-space element
         if (breakdown.length > 0) {
           setSelectedWord((prev) => {
@@ -140,8 +139,7 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
             prev === null ? 0 : Math.min(elementsCount - 1, prev + 1)
           );
         }
-      } else if (e.key === "Escape") {
-        e.preventDefault();
+      } else if (event.key === "Escape") {
         handleUnselect();
       }
     };
@@ -281,11 +279,68 @@ export function SongPageContent(props: {
   const [message, setMessage] = useState("");
   const { toast } = useToast();
   const selectedLineRef = useRef<HTMLButtonElement>(null);
+  const queryClient = useQueryClient();
 
   // load lyrics translation - moved to InteractiveLyrics component
   const currentLine = props.lyrics[selectedLine] || "";
 
-  // Translation logic moved to InteractiveLyrics component
+  // Prefetch the translations for the next 2 lines when the selected line changes
+  useEffect(() => {
+    // Helper function to prefetch translations
+    const prefetchLineTranslation = async (lineIndex: number) => {
+      const lineText = props.lyrics[lineIndex];
+
+      // Only prefetch if the line exists and has content
+      if (lineText && lineText.trim()) {
+        try {
+          // Using the prefetchQuery method as described in TanStack Query docs
+          await queryClient.prefetchQuery({
+            queryKey: ["translation", props.data.id, lineText],
+            queryFn: async () => {
+              const response = await fetch("/api/translations", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  songId: props.data.id,
+                  text: lineText,
+                }),
+              });
+
+              if (!response.ok) {
+                throw new Error("Failed to fetch translation");
+              }
+
+              return await response.json();
+            },
+            staleTime: 5 * 60 * 1000, // Data remains fresh for 5 minutes
+            gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+          });
+
+          console.log(`Prefetched translation for line ${lineIndex}`);
+        } catch (error) {
+          console.error(
+            `Error prefetching translation for line ${lineIndex}:`,
+            error
+          );
+          // Don't throw - we don't want to break the UI for prefetch failures
+        }
+      }
+    };
+
+    // Prefetch next two lines
+    const nextLineIndex = selectedLine + 1;
+    const nextNextLineIndex = selectedLine + 2;
+
+    // Use Promise.all to fetch both in parallel
+    Promise.all([
+      prefetchLineTranslation(nextLineIndex),
+      prefetchLineTranslation(nextNextLineIndex),
+    ]).catch((error) => {
+      console.error("Error during prefetching:", error);
+    });
+  }, [selectedLine, props.data.id, props.lyrics, queryClient]);
 
   useEffect(() => {
     const handleScroll = () => {
