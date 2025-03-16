@@ -1,6 +1,6 @@
 import "./globals.css";
 import { auth } from "@/auth";
-import { Providers } from "./providers";
+import Providers from "./providers";
 import { Header } from "./header";
 import { Footer } from "./footer";
 
