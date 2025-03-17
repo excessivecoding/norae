@@ -416,13 +416,13 @@ function InteractiveLyrics({
           <div className="flex flex-wrap gap-1 items-baseline">
             {breakdown.length > 0
               ? // Use breakdown data when available
-                breakdown.map((element, index) => {
+                breakdown.map((element, index, array) => {
                   return (
                     <React.Fragment key={index}>
                       <button
-                        onClick={() => handleWordSelect(index)}
                         type="button"
-                        className={`transition-colors relative hover:text-yellow-700/70 ${
+                        onClick={() => handleWordSelect(index)}
+                        className={`relative transition-colors hover:text-yellow-700/70 ${
                           selectedWord === index
                             ? "text-yellow-700 font-semibold"
                             : ""
@@ -432,9 +432,16 @@ function InteractiveLyrics({
                           <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
                         )}
                         <span className="relative">{element.text}</span>
+                        {element.romanization && (
+                          <span className="absolute -top-10 inset-x-0 text-center text-sm text-zinc-500">
+                            {element.romanization}
+                          </span>
+                        )}
                       </button>
 
-                      <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
+                      {index < array.length - 1 && (
+                        <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
+                      )}
                     </React.Fragment>
                   );
                 })
