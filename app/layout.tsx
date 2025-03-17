@@ -8,7 +8,7 @@ import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Norae",
-  description: "Learn language with music.",
+  description: "Learn language with your favorite songs",
 };
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
