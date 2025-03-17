@@ -1,6 +1,6 @@
 "use client";
 
-import { Star, Music2, Bot, X, Send } from "lucide-react";
+import { Star, Music2, Bot, X, Send, Loader } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -21,19 +21,7 @@ import { SpotifyTrack } from "@/app/types/spotify";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-
-interface TranslationResult {
-  breakdown: Array<{
-    text: string;
-    translation?: string;
-    explanation?: string;
-    infinitive?: {
-      text: string;
-      translation: string;
-    };
-  }>;
-  translation: string | null;
-}
+import { TranslationResult } from "@/app/translation";
 
 // Helper function to format duration from milliseconds to MM:SS
 const formatDuration = (ms: number): string => {
@@ -115,14 +103,12 @@ My question: ${questionValue}`;
 
   // Prefetch the translations for the next 2 lines when the selected line changes
   useEffect(() => {
-    // Helper function to prefetch translations
     const prefetchLineTranslation = async (lineIndex: number) => {
+      console.log("prefetching line", lineIndex);
       const lineText = lyrics[lineIndex];
 
-      // Only prefetch if the line exists and has content
       if (lineText && lineText.trim()) {
         try {
-          // Using the prefetchQuery method as described in TanStack Query docs
           await queryClient.prefetchQuery({
             queryKey: ["translation", songId, lineText],
             queryFn: async () => {
@@ -143,8 +129,8 @@ My question: ${questionValue}`;
 
               return await response.json();
             },
-            staleTime: 5 * 60 * 1000, // Data remains fresh for 5 minutes
-            gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+            staleTime: 5 * 60 * 1000,
+            gcTime: 10 * 60 * 1000,
           });
 
           console.log(`Prefetched translation for line ${lineIndex}`);
@@ -153,12 +139,10 @@ My question: ${questionValue}`;
             `Error prefetching translation for line ${lineIndex}:`,
             error
           );
-          // Don't throw - we don't want to break the UI for prefetch failures
         }
       }
     };
 
-    // Prefetch next two lines
     const nextLineIndex = selectedLine + 1;
     const nextNextLineIndex = selectedLine + 2;
 
@@ -433,31 +417,25 @@ function InteractiveLyrics({
             {breakdown.length > 0
               ? // Use breakdown data when available
                 breakdown.map((element, index) => {
-                  if (element.text === " ") {
-                    return (
-                      <span
-                        key={index}
-                        className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200"
-                      />
-                    );
-                  }
-
                   return (
-                    <button
-                      key={index}
-                      onClick={() => handleWordSelect(index)}
-                      type="button"
-                      className={`transition-colors relative hover:text-yellow-700/70 ${
-                        selectedWord === index
-                          ? "text-yellow-700 font-semibold"
-                          : ""
-                      }`}
-                    >
-                      {selectedWord === index && (
-                        <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
-                      )}
-                      <span className="relative">{element.text}</span>
-                    </button>
+                    <React.Fragment key={index}>
+                      <button
+                        onClick={() => handleWordSelect(index)}
+                        type="button"
+                        className={`transition-colors relative hover:text-yellow-700/70 ${
+                          selectedWord === index
+                            ? "text-yellow-700 font-semibold"
+                            : ""
+                        }`}
+                      >
+                        {selectedWord === index && (
+                          <span className="absolute inset-0 bg-yellow-200/70 -skew-y-2 rounded" />
+                        )}
+                        <span className="relative">{element.text}</span>
+                      </button>
+
+                      <span className="h-1 text-zinc-300 text-sm border-b-2 border-x-2 w-4 border-purple-200" />
+                    </React.Fragment>
                   );
                 })
               : // Fallback to splitting the line
@@ -501,27 +479,41 @@ function InteractiveLyrics({
       {/* Translation display section */}
       <div className="min-h-[100px] flex items-center justify-center rounded-lg bg-purple-50/50 p-6">
         {isTranslationLoading ? (
-          <div className="text-lg text-zinc-500 italic">Translating...</div>
+          <div className="text-lg text-zinc-500 italic flex items-center gap-2">
+            <Loader className="w-4 h-4 animate-spin" />
+            Thinking
+          </div>
         ) : selectedElement ? (
           // Show selected element details when available
           <div className="flex flex-col gap-2 w-full">
-            <div className="text-lg text-zinc-700 font-semibold">
-              {selectedElement.translation || translation}
+            <div className="text-lg text-zinc-700 font-semibold flex items-center gap-2">
+              <span>{selectedElement.translation || translation}</span>
+              {selectedElement.infinitive && (
+                <span className="text-sm font-medium">
+                  {"("}
+                  <span>{selectedElement.infinitive.text}</span>
+                  <span>{" - "}</span>
+                  <span>{selectedElement.infinitive.translation}</span>
+                  {")"}
+                </span>
+              )}
             </div>
             {selectedElement.explanation && (
               <div className="text-sm text-zinc-600">
                 {selectedElement.explanation}
               </div>
             )}
-            {selectedElement.infinitive && (
-              <div className="mt-2 p-3 bg-purple-50 rounded-lg">
-                <div className="font-medium text-purple-700">Root Form:</div>
-                <div className="flex justify-between">
-                  <div>{selectedElement.infinitive.text}</div>
-                  <div>{selectedElement.infinitive.translation}</div>
-                </div>
-              </div>
-            )}
+
+            <Separator />
+
+            <div>
+              <p className="text-sm font-medium text-zinc-700">Examples</p>
+              <ol className="list-decimal list-inside text-sm text-zinc-600">
+                {selectedElement.examples.map((example, index) => (
+                  <li key={index}>{example}</li>
+                ))}
+              </ol>
+            </div>
           </div>
         ) : translation ? (
           // Show full translation when no element is selected
