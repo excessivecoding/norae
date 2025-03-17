@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
   DialogContent,
@@ -19,8 +20,19 @@ import { toggleFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { TranslationResult } from "@/app/translation";
-import { Textarea } from "@/components/ui/textarea";
+
+interface TranslationResult {
+  breakdown: Array<{
+    text: string;
+    translation?: string;
+    explanation?: string;
+    infinitive?: {
+      text: string;
+      translation: string;
+    };
+  }>;
+  translation: string | null;
+}
 
 // Helper function to format duration from milliseconds to MM:SS
 const formatDuration = (ms: number): string => {
@@ -29,19 +41,216 @@ const formatDuration = (ms: number): string => {
   return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 };
 
+interface LyricsSectionProps {
+  lyrics: string[];
+  songId: string;
+}
+
+export function LyricsSection({ lyrics, songId }: LyricsSectionProps) {
+  const [selectedLine, setSelectedLine] = useState<number>(0);
+  const [isQuestionInputVisible, setIsQuestionInputVisible] = useState(false);
+  const selectedLineRef = useRef<HTMLButtonElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const questionInputRef = useRef<HTMLTextAreaElement>(null);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowUp") {
+        e.preventDefault();
+        setSelectedLine((prev) => Math.max(0, prev - 1));
+      } else if (e.key === "ArrowDown") {
+        e.preventDefault();
+        setSelectedLine((prev) => Math.min(lyrics.length - 1, prev + 1));
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lyrics.length]);
+
+  useEffect(() => {
+    if (selectedLineRef.current) {
+      selectedLineRef.current.scrollIntoView({
+        behavior: "smooth",
+        block: "center",
+      });
+    }
+  }, [selectedLine]);
+
+  useEffect(() => {
+    if (isQuestionInputVisible && questionInputRef.current) {
+      questionInputRef.current.focus();
+    }
+  }, [isQuestionInputVisible]);
+
+  const handleSubmitQuestion = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const formData = new FormData(e.currentTarget);
+    const questionValue = formData.get("question") as string;
+
+    if (!questionValue?.trim()) {
+      toast({
+        description: "Please enter a question",
+        variant: "destructive",
+        duration: 2000,
+      });
+      return;
+    }
+
+    const enrichedPrompt = `Help me understand this song. 
+Current lyric line: "${lyrics[selectedLine]}". 
+My question: ${questionValue}`;
+
+    const encodedPrompt = encodeURIComponent(enrichedPrompt);
+    const chatGptUrl = `https://chat.openai.com/?model=gpt-4&q=${encodedPrompt}`;
+
+    toast({
+      description: "Opening ChatGPT with your question",
+      duration: 2000,
+    });
+
+    if (formRef.current) {
+      formRef.current.reset();
+    }
+
+    setIsQuestionInputVisible(false);
+    window.open(chatGptUrl, "_blank");
+  };
+
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <Card className="border-none backdrop-blur-sm shadow-none">
+        <CardContent className="p-8">
+          <div className="space-y-4">
+            {lyrics.map((line, index) => (
+              <button
+                key={index}
+                ref={selectedLine === index ? selectedLineRef : null}
+                onClick={() => setSelectedLine(index)}
+                className={`w-full text-left transition-colors ${
+                  selectedLine === index
+                    ? "text-zinc-900"
+                    : "text-zinc-400 hover:text-zinc-600"
+                }`}
+              >
+                <p className="text-2xl leading-relaxed font-bold">{line}</p>
+              </button>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="md:sticky md:top-6 md:self-start">
+        <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-6">
+          <CardContent className="p-8">
+            <div className="space-y-4">
+              <InteractiveLyrics
+                line={lyrics[selectedLine] || ""}
+                songId={songId}
+              />
+              <div className="flex justify-end">
+                {!isQuestionInputVisible ? (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => setIsQuestionInputVisible(true)}
+                  >
+                    <Bot className="w-4 h-4" />
+                    Ask GPT
+                  </Button>
+                ) : (
+                  <div className="w-full space-y-3">
+                    <form
+                      ref={formRef}
+                      onSubmit={handleSubmitQuestion}
+                      className="space-y-3"
+                    >
+                      <Textarea
+                        ref={questionInputRef}
+                        name="question"
+                        placeholder="Ask any question about the lyrics, meaning, translation, or cultural context of this song..."
+                        className="w-full min-h-[100px] resize-none"
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsQuestionInputVisible(false)}
+                        >
+                          Cancel
+                        </Button>
+                        <Button type="submit" size="sm" className="gap-2">
+                          <Send className="w-3 h-3" />
+                          Submit
+                        </Button>
+                      </div>
+                    </form>
+                  </div>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-4">
+          <CardContent className="p-6">
+            <h3 className="text-sm font-medium text-zinc-900 mb-3">
+              Keyboard Shortcuts
+            </h3>
+            <div className="space-y-2 text-sm text-zinc-500">
+              <div className="flex items-center justify-between">
+                <span>Navigate lines</span>
+                <div className="flex gap-1">
+                  <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                    ↑
+                  </kbd>
+                  <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                    ↓
+                  </kbd>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Navigate words</span>
+                <div className="flex gap-1">
+                  <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                    ←
+                  </kbd>
+                  <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                    →
+                  </kbd>
+                </div>
+              </div>
+              <div className="flex items-center justify-between">
+                <span>Clear selection</span>
+                <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
+                  Esc
+                </kbd>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+}
+
 interface InteractiveLyricsProps {
   line: string;
   initialSelectedWord?: number | null;
   onWordSelect?: (index: number | null) => void;
-  songId: string; // Add songId prop to fetch translations
+  songId: string;
 }
 
-const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
+function InteractiveLyrics({
   line,
   initialSelectedWord = null,
   onWordSelect,
   songId,
-}) => {
+}: InteractiveLyricsProps) {
   const [selectedWord, setSelectedWord] = useState<number | null>(
     initialSelectedWord
   );
@@ -271,83 +480,18 @@ const InteractiveLyrics: React.FC<InteractiveLyricsProps> = ({
       </div>
     </div>
   );
-};
+}
 
 export function SongPageContent(props: {
   data: SpotifyTrack;
   isFavorite: boolean;
-  lyrics: string[];
+  // lyrics: string[];
+  children: React.ReactNode;
 }) {
-  const [selectedLine, setSelectedLine] = useState<number>(0);
   const [isStarred, setIsStarred] = useState(props.isFavorite);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const [isQuestionInputVisible, setIsQuestionInputVisible] = useState(false);
   const { toast } = useToast();
-  const selectedLineRef = useRef<HTMLButtonElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
-  const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const queryClient = useQueryClient();
-
-  // load lyrics translation - moved to InteractiveLyrics component
-  const currentLine = props.lyrics[selectedLine] || "";
-
-  // Prefetch the translations for the next 2 lines when the selected line changes
-  useEffect(() => {
-    // Helper function to prefetch translations
-    const prefetchLineTranslation = async (lineIndex: number) => {
-      const lineText = props.lyrics[lineIndex];
-
-      // Only prefetch if the line exists and has content
-      if (lineText && lineText.trim()) {
-        try {
-          // Using the prefetchQuery method as described in TanStack Query docs
-          await queryClient.prefetchQuery({
-            queryKey: ["translation", props.data.id, lineText],
-            queryFn: async () => {
-              const response = await fetch("/api/translations", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  songId: props.data.id,
-                  text: lineText,
-                }),
-              });
-
-              if (!response.ok) {
-                throw new Error("Failed to fetch translation");
-              }
-
-              return await response.json();
-            },
-            staleTime: 5 * 60 * 1000, // Data remains fresh for 5 minutes
-            gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
-          });
-
-          console.log(`Prefetched translation for line ${lineIndex}`);
-        } catch (error) {
-          console.error(
-            `Error prefetching translation for line ${lineIndex}:`,
-            error
-          );
-          // Don't throw - we don't want to break the UI for prefetch failures
-        }
-      }
-    };
-
-    // Prefetch next two lines
-    const nextLineIndex = selectedLine + 1;
-    const nextNextLineIndex = selectedLine + 2;
-
-    // Use Promise.all to fetch both in parallel
-    Promise.all([
-      prefetchLineTranslation(nextLineIndex),
-      prefetchLineTranslation(nextNextLineIndex),
-    ]).catch((error) => {
-      console.error("Error during prefetching:", error);
-    });
-  }, [selectedLine, props.data.id, props.lyrics, queryClient]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -361,37 +505,6 @@ export function SongPageContent(props: {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "ArrowUp") {
-        e.preventDefault();
-        setSelectedLine((prev) => Math.max(0, prev - 1));
-      } else if (e.key === "ArrowDown") {
-        e.preventDefault();
-        setSelectedLine((prev) => Math.min(props.lyrics.length - 1, prev + 1));
-      }
-    };
-
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [props.lyrics.length]);
-
-  useEffect(() => {
-    if (selectedLineRef.current) {
-      selectedLineRef.current.scrollIntoView({
-        behavior: "smooth",
-        block: "center",
-      });
-    }
-  }, [selectedLine]);
-
-  // Use this effect to focus the textarea when it becomes visible
-  useEffect(() => {
-    if (isQuestionInputVisible && questionInputRef.current) {
-      questionInputRef.current.focus();
-    }
-  }, [isQuestionInputVisible]);
 
   const handleStar = async () => {
     try {
@@ -437,52 +550,6 @@ export function SongPageContent(props: {
         duration: 3000,
       });
     }
-  };
-
-  const handleSubmitQuestion = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-
-    // Use FormData to get the question value
-    const formData = new FormData(e.currentTarget);
-    const questionValue = formData.get("question") as string;
-
-    // Only proceed if there's an actual question
-    if (!questionValue?.trim()) {
-      toast({
-        description: "Please enter a question",
-        variant: "destructive",
-        duration: 2000,
-      });
-      return;
-    }
-
-    // Create a context-rich prompt that includes information about the song
-    const enrichedPrompt = `Help me understand this song: "${props.data.name}" by ${props.data.artists[0].name}. 
-Current lyric line: "${props.lyrics[selectedLine]}". 
-My question: ${questionValue}`;
-
-    // Encode the prompt for use in a URL
-    const encodedPrompt = encodeURIComponent(enrichedPrompt);
-
-    // Construct the ChatGPT URL with the gpt-4 model and the encoded prompt
-    const chatGptUrl = `https://chat.openai.com/?model=gpt-4&q=${encodedPrompt}`;
-
-    // Show a notification
-    toast({
-      description: "Opening ChatGPT with your question",
-      duration: 2000,
-    });
-
-    // Reset the form
-    if (formRef.current) {
-      formRef.current.reset();
-    }
-
-    // Hide the question input
-    setIsQuestionInputVisible(false);
-
-    // Open ChatGPT in a new tab
-    window.open(chatGptUrl, "_blank");
   };
 
   return (
@@ -590,121 +657,7 @@ My question: ${questionValue}`;
           </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <Card className="border-none backdrop-blur-sm shadow-none">
-            <CardContent className="p-8">
-              <div className="space-y-4">
-                {props.lyrics.map((line, index) => (
-                  <button
-                    key={index}
-                    ref={selectedLine === index ? selectedLineRef : null}
-                    onClick={() => setSelectedLine(index)}
-                    className={`w-full text-left transition-colors ${
-                      selectedLine === index
-                        ? "text-zinc-900"
-                        : "text-zinc-400 hover:text-zinc-600"
-                    }`}
-                  >
-                    <p className="text-2xl leading-relaxed font-bold">{line}</p>
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-
-          <div className="md:sticky md:top-6 md:self-start">
-            <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-6">
-              <CardContent className="p-8">
-                <div className="space-y-4">
-                  <InteractiveLyrics
-                    line={props.lyrics[selectedLine] || ""}
-                    songId={props.data.id}
-                  />
-                  <div className="flex justify-end">
-                    {!isQuestionInputVisible ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="gap-2"
-                        onClick={() => setIsQuestionInputVisible(true)}
-                      >
-                        <Bot className="w-4 h-4" />
-                        Ask GPT
-                      </Button>
-                    ) : (
-                      <div className="w-full space-y-3">
-                        <form
-                          ref={formRef}
-                          onSubmit={handleSubmitQuestion}
-                          className="space-y-3"
-                        >
-                          <Textarea
-                            ref={questionInputRef}
-                            name="question"
-                            placeholder="Ask any question about the lyrics, meaning, translation, or cultural context of this song..."
-                            className="w-full min-h-[100px] resize-none"
-                          />
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              onClick={() => setIsQuestionInputVisible(false)}
-                            >
-                              Cancel
-                            </Button>
-                            <Button type="submit" size="sm" className="gap-2">
-                              <Send className="w-3 h-3" />
-                              Submit
-                            </Button>
-                          </div>
-                        </form>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-4">
-              <CardContent className="p-6">
-                <h3 className="text-sm font-medium text-zinc-900 mb-3">
-                  Keyboard Shortcuts
-                </h3>
-                <div className="space-y-2 text-sm text-zinc-500">
-                  <div className="flex items-center justify-between">
-                    <span>Navigate lines</span>
-                    <div className="flex gap-1">
-                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
-                        ↑
-                      </kbd>
-                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
-                        ↓
-                      </kbd>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Navigate words</span>
-                    <div className="flex gap-1">
-                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
-                        ←
-                      </kbd>
-                      <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
-                        →
-                      </kbd>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <span>Clear selection</span>
-                    <kbd className="px-2 py-1 bg-zinc-100 rounded text-zinc-600">
-                      Esc
-                    </kbd>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        </div>
+        {props.children}
       </div>
 
       <div className="fixed bottom-14 left-0 right-0 p-4 md:p-6 pointer-events-none">

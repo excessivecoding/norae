@@ -1,8 +1,9 @@
 import { auth } from "@/auth";
-import { SongPageContent } from "./content";
+import { LyricsSection, SongPageContent } from "./content";
 import { hasUserFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 import { redis } from "@/app/redis";
+import { Suspense } from "react";
 
 export default async function SongPage({ params }: { params: { id: string } }) {
   const session = await auth();
@@ -28,11 +29,18 @@ export default async function SongPage({ params }: { params: { id: string } }) {
 
   const isFavorite = await hasUserFavorite(session.user.email, params.id);
 
-  const lyrics = ((await getLyrics(data)) || "").split("\n");
-
   return (
-    <SongPageContent data={data} isFavorite={isFavorite} lyrics={lyrics} />
+    <SongPageContent data={data} isFavorite={isFavorite}>
+      <Suspense fallback={<div>Loading...</div>}>
+        <Lyrics data={data} />
+      </Suspense>
+    </SongPageContent>
   );
+}
+
+async function Lyrics(props: { data: SpotifyTrack }) {
+  const lyrics = ((await getLyrics(props.data)) || "").split("\n");
+  return <LyricsSection lyrics={lyrics} songId={props.data.id} />;
 }
 
 async function getLyrics(track: SpotifyTrack) {
