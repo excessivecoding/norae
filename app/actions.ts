@@ -3,6 +3,9 @@
 import { auth } from "@/auth";
 import { SpotifyTrack } from "@/app/types/spotify";
 import { redis } from "./redis";
+import { generateObject } from "ai";
+import { z } from "zod";
+import { openai } from "./openai";
 
 export async function getUserFavorites(email: string) {
   const value = (await redis.get(`v1/${email}/favorites`)) || [];
@@ -58,4 +61,151 @@ export async function toggleFavorite(args: {
   } else {
     return removeFavorite(args.track);
   }
+}
+
+const difficultySchema = z.enum(["easy", "medium", "hard"]);
+
+export type TrackDifficulty = z.infer<typeof difficultySchema>;
+
+export async function getTrackDifficulty(track: SpotifyTrack): Promise<{
+  difficulty: TrackDifficulty;
+}> {
+  // Try to get difficulty from KV cache first
+  try {
+    const cachedDifficulty = await redis.get(`difficulty/${track.id}`);
+    if (cachedDifficulty) {
+      console.log("Cache hit for difficulty:", track.id);
+      return { difficulty: cachedDifficulty as TrackDifficulty };
+    }
+  } catch (error) {
+    console.error("Error reading difficulty from KV cache:", error);
+  }
+
+  const lyrics = await getLyrics(track);
+
+  const result = await generateObject({
+    model: openai("gpt-4o"),
+    schema: z.object({
+      difficulty: difficultySchema,
+    }),
+    prompt: `
+    Given the lyrics of this song, determine the difficulty of the song for learning the origin language of the song as an english speaker.
+
+    Lyrics:
+    ${lyrics}
+    `,
+  });
+
+  // Store difficulty in KV cache
+  try {
+    await redis.set(`difficulty/${track.id}`, result.object.difficulty);
+    console.log("Cached difficulty for:", track.id);
+  } catch (error) {
+    console.error("Error writing difficulty to KV cache:", error);
+  }
+
+  return result.object;
+}
+
+export async function getLyrics(track: SpotifyTrack) {
+  // Try to get lyrics from KV cache first
+  try {
+    const cachedLyrics = await redis.get(`lyrics/${track.id}`);
+    if (cachedLyrics) {
+      console.log("Cache hit for lyrics:", track.id);
+      return cachedLyrics;
+    }
+  } catch (error) {
+    console.error("Error reading from KV cache:", error);
+  }
+
+  const response = await fetch(
+    `https://api.genius.com/search?q=${encodeURIComponent(
+      `${track.name} ${track.artists[0].name}`
+    )}`,
+    {
+      headers: {
+        Authorization: `Bearer ${process.env.GENIUS_ACCESS_TOKEN}`,
+      },
+    }
+  );
+
+  const results = (await response.json()) as {
+    response: {
+      hits: [
+        {
+          type: string;
+          result: {
+            id: number;
+            api_path: string;
+            url: string;
+          };
+        }
+      ];
+    };
+  };
+
+  const firstHit = results.response.hits.at(0)?.result;
+
+  if (!firstHit) {
+    return null;
+  }
+
+  // Get the song URL from the API result
+  const songUrl = firstHit.url;
+
+  if (!songUrl) {
+    return null;
+  }
+
+  // Fetch the HTML content of the Genius page
+  const htmlResponse = await fetch(songUrl);
+  const htmlText = await htmlResponse.text();
+
+  // Extract lyrics using a simpler approach to find the lyrics container
+  const lyricsRegex =
+    /<div[^>]*data-lyrics-container="true"[^>]*>([\s\S]*?)<\/div>/gi;
+  const lyricsMatches = [...htmlText.matchAll(lyricsRegex)];
+
+  if (!lyricsMatches || lyricsMatches.length === 0) {
+    console.log("Couldn't find the lyrics section.");
+    return null;
+  }
+
+  // Combine all matches and replace <br> tags with newlines
+  let lyrics = lyricsMatches.map((match) => match[1]).join("\n");
+  lyrics = lyrics.replace(/<br\s*\/?>/gi, "\n");
+
+  // Remove HTML tags
+  lyrics = lyrics.replace(/<[^>]*>/g, "");
+
+  // Remove section headers like [Verse], [Bridge], etc.
+  lyrics = lyrics.replace(/\[.*?\]/g, "");
+
+  // Clean up multiple newlines
+  lyrics = lyrics.replace(/\n{2,}/g, "\n");
+
+  // Decode HTML entities
+  lyrics = lyrics
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"')
+    .replace(/&#039;/g, "'")
+    .replace(/&nbsp;/g, " ")
+    .replace(/&#x27;/g, "'");
+
+  const cleanedLyrics = lyrics.trim();
+
+  // Store lyrics in KV cache if we successfully got them
+  if (cleanedLyrics) {
+    try {
+      await redis.set(`lyrics/${track.id}`, cleanedLyrics);
+      console.log("Cached lyrics for:", track.id);
+    } catch (error) {
+      console.error("Error writing to KV cache:", error);
+    }
+  }
+
+  return cleanedLyrics;
 }

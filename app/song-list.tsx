@@ -12,7 +12,12 @@ import Link from "next/link";
 import { SpotifyTrack } from "@/app/types/spotify";
 import { useSession } from "next-auth/react";
 import { useState } from "react";
-import { toggleFavorite, getUserFavorites } from "./actions";
+import {
+  toggleFavorite,
+  getUserFavorites,
+  getTrackDifficulty,
+  TrackDifficulty,
+} from "./actions";
 import { useToast } from "@/components/ui/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
@@ -29,6 +34,45 @@ function SongItem({
   const { data: session } = useSession();
   const { toast } = useToast();
   const [isToggling, setIsToggling] = useState(false);
+  const [loadDifficulty, setLoadDifficulty] = useState(false);
+
+  // Query for track difficulty - now only enabled when loadDifficulty is true
+  const {
+    data: difficultyData,
+    isLoading: isDifficultyLoading,
+    refetch,
+  } = useQuery({
+    queryKey: ["trackDifficulty", track?.id],
+    queryFn: async () => {
+      if (!track || !session?.user?.email)
+        return { difficulty: "easy" as TrackDifficulty };
+      return getTrackDifficulty(track);
+    },
+    enabled: false, // Initially disabled - manual trigger only
+  });
+
+  const difficulty = difficultyData?.difficulty || "easy";
+
+  // Function to handle difficulty loading
+  const handleLoadDifficulty = (e: React.MouseEvent) => {
+    e.preventDefault(); // Prevent navigation
+    setLoadDifficulty(true);
+    refetch();
+  };
+
+  // Helper function to get difficulty styling
+  const getDifficultyStyle = (difficulty: TrackDifficulty) => {
+    switch (difficulty) {
+      case "easy":
+        return "bg-emerald-100 text-emerald-700";
+      case "medium":
+        return "bg-amber-100 text-amber-700";
+      case "hard":
+        return "bg-rose-100 text-rose-700";
+      default:
+        return "bg-emerald-100 text-emerald-700";
+    }
+  };
 
   // Helper function to format duration
   const formatDuration = (ms: number) => {
@@ -95,9 +139,32 @@ function SongItem({
           {track ? formatDuration(track.duration_ms) : "3:21"}
         </div>
         <div className="flex justify-center">
-          <div className="text-sm px-2 py-1 rounded-full bg-emerald-100 text-emerald-700 font-medium">
-            Easy
-          </div>
+          {!loadDifficulty ? (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleLoadDifficulty}
+              className="text-xs px-2 py-1 h-auto"
+            >
+              Check Difficulty
+            </Button>
+          ) : (
+            <div
+              className={`text-sm px-2 py-1 rounded-full font-medium ${getDifficultyStyle(
+                difficulty as TrackDifficulty
+              )}`}
+            >
+              {isDifficultyLoading ? (
+                <span className="flex items-center gap-1">
+                  <Loader className="h-3 w-3 animate-spin" />
+                  {/* <span>Loading...</span> */}
+                </span>
+              ) : (
+                difficulty.charAt(0).toUpperCase() + difficulty.slice(1)
+              )}
+            </div>
+          )}
         </div>
         <div className="flex items-center justify-end gap-2 pr-3">
           {track && (
