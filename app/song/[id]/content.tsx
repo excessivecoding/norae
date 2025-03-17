@@ -20,6 +20,7 @@ import { toggleFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 import React from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 interface TranslationResult {
   breakdown: Array<{
@@ -52,7 +53,6 @@ export function LyricsSection({ lyrics, songId }: LyricsSectionProps) {
   const selectedLineRef = useRef<HTMLButtonElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
-  const { toast } = useToast();
   const queryClient = useQueryClient();
 
   useEffect(() => {
@@ -92,11 +92,7 @@ export function LyricsSection({ lyrics, songId }: LyricsSectionProps) {
     const questionValue = formData.get("question") as string;
 
     if (!questionValue?.trim()) {
-      toast({
-        description: "Please enter a question",
-        variant: "destructive",
-        duration: 2000,
-      });
+      toast("Please enter a question");
       return;
     }
 
@@ -107,10 +103,7 @@ My question: ${questionValue}`;
     const encodedPrompt = encodeURIComponent(enrichedPrompt);
     const chatGptUrl = `https://chat.openai.com/?model=gpt-4&q=${encodedPrompt}`;
 
-    toast({
-      description: "Opening ChatGPT with your question",
-      duration: 2000,
-    });
+    toast("Opening ChatGPT with your question");
 
     if (formRef.current) {
       formRef.current.reset();
@@ -549,8 +542,6 @@ export function SongPageContent(props: {
 }) {
   const [isStarred, setIsStarred] = useState(props.isFavorite);
   const [isHeaderVisible, setIsHeaderVisible] = useState(true);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -594,20 +585,11 @@ export function SongPageContent(props: {
         operation: newStatus ? "add" : "remove",
       });
 
-      toast({
-        description: newStatus
-          ? "Added to favorites"
-          : "Removed from favorites",
-        duration: 2000,
-      });
+      toast(newStatus ? "Added to favorites" : "Removed from favorites");
     } catch (error) {
       console.error("Error toggling favorite:", error);
       setIsStarred(!isStarred); // Revert on error
-      toast({
-        description: "Failed to update favorites",
-        variant: "destructive",
-        duration: 3000,
-      });
+      toast("Failed to update favorites");
     }
   };
 

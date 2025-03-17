@@ -18,7 +18,7 @@ import {
   getTrackDifficulty,
   TrackDifficulty,
 } from "./actions";
-import { useToast } from "@/components/ui/use-toast";
+import { toast } from "sonner";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 export function SongList(props: { tracks?: SpotifyTrack[] }) {
@@ -133,7 +133,6 @@ function SongItem({
   onToggleFavorite: (track: SpotifyTrack) => Promise<void>;
 }) {
   const { data: session } = useSession();
-  const { toast } = useToast();
   const [isToggling, setIsToggling] = useState(false);
   const [loadDifficulty, setLoadDifficulty] = useState(false);
 
@@ -187,10 +186,7 @@ function SongItem({
   const handleToggleFavorite = async (e: React.MouseEvent) => {
     e.preventDefault(); // Prevent navigation
     if (!session?.user?.email || !track) {
-      toast({
-        description: "Please sign in to save favorites",
-        variant: "destructive",
-      });
+      toast("Please sign in to save favorites");
       return;
     }
 
@@ -198,18 +194,9 @@ function SongItem({
     try {
       await onToggleFavorite(track);
 
-      toast({
-        description: !isFavorite
-          ? "Added to favorites"
-          : "Removed from favorites",
-        duration: 2000,
-      });
+      toast(!isFavorite ? "Added to favorites" : "Removed from favorites");
     } catch (error) {
-      toast({
-        description: "Failed to update favorites",
-        variant: "destructive",
-        duration: 3000,
-      });
+      toast("Failed to update favorites");
     } finally {
       setIsToggling(false);
     }
@@ -307,13 +294,7 @@ function SongItem({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
               <DropdownMenuItem className="cursor-pointer">
-                Add to playlist
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer">
                 Share
-              </DropdownMenuItem>
-              <DropdownMenuItem className="cursor-pointer text-red-600">
-                Remove
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>

@@ -4,6 +4,7 @@ import Providers from "./providers";
 import { Header } from "./header";
 import { Footer } from "./footer";
 import { Metadata } from "next";
+import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
   title: "Norae",
@@ -27,6 +28,7 @@ export default async function RootLayout(props: { children: React.ReactNode }) {
             <Footer />
           </div>
         </Providers>
+        <Toaster />
       </body>
     </html>
   );
