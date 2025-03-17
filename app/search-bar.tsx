@@ -151,8 +151,17 @@ export function SearchBar() {
                       onSelect={() => handleTrackClick(track.id)}
                     >
                       <div className="flex-1 flex items-center gap-2">
-                        <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-blue-500/10 flex items-center justify-center">
-                          <Music2 className="w-4 h-4 text-purple-500" />
+                        <div className="relative w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/10 to-blue-500/10 flex items-center justify-center overflow-hidden">
+                          {track.album?.images &&
+                          track.album.images.length > 0 ? (
+                            <img
+                              src={track.album.images[0].url}
+                              alt={`${track.album.name} cover`}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Music2 className="w-4 h-4 text-purple-500" />
+                          )}
                         </div>
                         <div className="flex flex-col">
                           <span className="font-medium">{track.name}</span>

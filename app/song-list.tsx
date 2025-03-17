@@ -40,8 +40,16 @@ export function SongList(props: { tracks?: SpotifyTrack[] }) {
         >
           <div className="group relative overflow-hidden rounded-xl bg-white hover:bg-gradient-to-r hover:from-purple-50 hover:to-blue-50 transition-all border border-transparent hover:border-purple-500/20">
             <div className="grid grid-cols-[auto,1fr,120px,120px,120px] gap-4 items-center p-3">
-              <div className="relative w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500/10 to-blue-500/10 flex items-center justify-center group-hover:scale-105 transition-transform">
-                <Music2 className="w-6 h-6 text-purple-500" />
+              <div className="relative w-12 h-12 rounded-lg bg-gradient-to-br from-purple-500/10 to-blue-500/10 flex items-center justify-center group-hover:scale-105 transition-transform overflow-hidden">
+                {track?.album?.images && track.album.images.length > 0 ? (
+                  <img
+                    src={track.album.images[0].url}
+                    alt={`${track.album.name} cover`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <Music2 className="w-6 h-6 text-purple-500" />
+                )}
               </div>
               <div className="px-3">
                 <div className="font-semibold">
