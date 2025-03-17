@@ -3,6 +3,12 @@ import { auth } from "@/auth";
 import Providers from "./providers";
 import { Header } from "./header";
 import { Footer } from "./footer";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Norae",
+  description: "Learn language with music.",
+};
 
 export default async function RootLayout(props: { children: React.ReactNode }) {
   const session = await auth();
