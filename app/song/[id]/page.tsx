@@ -4,6 +4,8 @@ import { hasUserFavorite } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 import { redis } from "@/app/redis";
 import { Suspense } from "react";
+import { Card, CardContent } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default async function SongPage({ params }: { params: { id: string } }) {
   const session = await auth();
@@ -31,7 +33,7 @@ export default async function SongPage({ params }: { params: { id: string } }) {
 
   return (
     <SongPageContent data={data} isFavorite={isFavorite}>
-      <Suspense fallback={<div>Loading...</div>}>
+      <Suspense fallback={<LyricsLoadingSkeleton />}>
         <Lyrics data={data} />
       </Suspense>
     </SongPageContent>
@@ -144,4 +146,30 @@ async function getLyrics(track: SpotifyTrack) {
   }
 
   return cleanedLyrics;
+}
+
+function LyricsLoadingSkeleton() {
+  return (
+    <div className="grid md:grid-cols-2 gap-6">
+      <Card className="border-none backdrop-blur-sm shadow-none">
+        <CardContent className="p-8">
+          <div className="space-y-6">
+            {Array.from({ length: 8 }).map((_, index) => (
+              <Skeleton key={index} className="h-8 w-full" />
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="md:sticky md:top-6 md:self-start">
+        <Card className="border-none bg-white/80 backdrop-blur-sm shadow-none mt-6">
+          <CardContent className="p-8">
+            <div className="space-y-4">
+              <Skeleton className="h-[300px] w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
