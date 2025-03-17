@@ -53,6 +53,7 @@ export function LyricsSection({ lyrics, songId }: LyricsSectionProps) {
   const formRef = useRef<HTMLFormElement>(null);
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -118,6 +119,64 @@ My question: ${questionValue}`;
     setIsQuestionInputVisible(false);
     window.open(chatGptUrl, "_blank");
   };
+
+  // Prefetch the translations for the next 2 lines when the selected line changes
+  useEffect(() => {
+    // Helper function to prefetch translations
+    const prefetchLineTranslation = async (lineIndex: number) => {
+      const lineText = lyrics[lineIndex];
+
+      // Only prefetch if the line exists and has content
+      if (lineText && lineText.trim()) {
+        try {
+          // Using the prefetchQuery method as described in TanStack Query docs
+          await queryClient.prefetchQuery({
+            queryKey: ["translation", songId, lineText],
+            queryFn: async () => {
+              const response = await fetch("/api/translations", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  songId,
+                  text: lineText,
+                }),
+              });
+
+              if (!response.ok) {
+                throw new Error("Failed to fetch translation");
+              }
+
+              return await response.json();
+            },
+            staleTime: 5 * 60 * 1000, // Data remains fresh for 5 minutes
+            gcTime: 10 * 60 * 1000, // Keep in cache for 10 minutes
+          });
+
+          console.log(`Prefetched translation for line ${lineIndex}`);
+        } catch (error) {
+          console.error(
+            `Error prefetching translation for line ${lineIndex}:`,
+            error
+          );
+          // Don't throw - we don't want to break the UI for prefetch failures
+        }
+      }
+    };
+
+    // Prefetch next two lines
+    const nextLineIndex = selectedLine + 1;
+    const nextNextLineIndex = selectedLine + 2;
+
+    // Use Promise.all to fetch both in parallel
+    Promise.all([
+      prefetchLineTranslation(nextLineIndex),
+      prefetchLineTranslation(nextNextLineIndex),
+    ]).catch((error) => {
+      console.error("Error during prefetching:", error);
+    });
+  }, [selectedLine, songId, lyrics, queryClient]);
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
