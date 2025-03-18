@@ -170,7 +170,7 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   const lyricsMatches = [...htmlText.matchAll(lyricsRegex)];
 
   if (!lyricsMatches || lyricsMatches.length === 0) {
-    console.log("Couldn't find the lyrics section.");
+    console.log("Couldn't find the lyrics section. URL:", songUrl);
     return null;
   }
 
