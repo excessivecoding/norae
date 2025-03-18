@@ -162,6 +162,10 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
 
   // Fetch the HTML content of the Genius page
   const htmlResponse = await fetch(songUrl);
+  if (!htmlResponse.ok) {
+    console.error("Failed to fetch HTML content for:", songUrl);
+    return null;
+  }
   const htmlText = await htmlResponse.text();
 
   // Extract lyrics using a simpler approach to find the lyrics container
