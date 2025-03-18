@@ -28,7 +28,10 @@ export default async function SongPage({ params }: { params: { id: string } }) {
 
 async function Lyrics(props: { data: SpotifyTrack }) {
   const lyricsText = await getLyrics(props.data);
-  const lyrics = lyricsText ? lyricsText.split("\n") : ["No lyrics found"];
+  const lyrics = lyricsText ? lyricsText.split("\n") : null;
+  if (!lyrics) {
+    return <div>No lyrics found</div>;
+  }
   return <LyricsSection lyrics={lyrics} songId={props.data.id} />;
 }
 
