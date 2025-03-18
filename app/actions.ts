@@ -163,7 +163,10 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   // Fetch the HTML content of the Genius page
   const htmlResponse = await fetch(songUrl);
   if (!htmlResponse.ok) {
-    console.error("Failed to fetch HTML content for:", songUrl);
+    console.error(
+      `Failed to fetch HTML content for ${htmlResponse.status} ${songUrl}:`,
+      htmlResponse.statusText
+    );
     return null;
   }
   const htmlText = await htmlResponse.text();
