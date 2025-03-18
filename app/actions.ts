@@ -161,7 +161,11 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   }
 
   // Fetch the HTML content of the Genius page
-  const htmlResponse = await fetch(songUrl);
+  const htmlResponse = await fetch(songUrl, {
+    headers: {
+      Authorization: `Bearer ${process.env.GENIUS_ACCESS_TOKEN}`,
+    },
+  });
   if (!htmlResponse.ok) {
     console.error(
       `Failed to fetch HTML content for ${htmlResponse.status} ${songUrl}:`,
