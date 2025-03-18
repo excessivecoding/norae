@@ -153,18 +153,22 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   }
 
   // Get the song URL from the API result
-  const songUrl = firstHit.url;
+  const rawSongURL = firstHit.url;
 
-  if (!songUrl) {
+  if (!rawSongURL) {
     console.log("No song URL found for:", track.id);
     return null;
   }
 
+  const songURL = new URL(rawSongURL);
+  if (process.env.GENIUS_HOST) {
+    songURL.host = process.env.GENIUS_HOST;
+  }
   // Fetch the HTML content of the Genius page
-  const htmlResponse = await fetch(songUrl);
+  const htmlResponse = await fetch(songURL.toString());
   if (!htmlResponse.ok) {
     console.error(
-      `Failed to fetch HTML content for ${htmlResponse.status} ${songUrl}`
+      `Failed to fetch HTML content for ${htmlResponse.status} ${rawSongURL}`
     );
     console.error(await htmlResponse.text());
     return null;
@@ -177,7 +181,7 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   const lyricsMatches = [...htmlText.matchAll(lyricsRegex)];
 
   if (!lyricsMatches || lyricsMatches.length === 0) {
-    console.log("Couldn't find the lyrics section. URL:", songUrl);
+    console.log("Couldn't find the lyrics section. URL:", rawSongURL);
     return null;
   }
 
