@@ -161,10 +161,9 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   }
 
   const songURL = new URL(rawSongURL);
-  if (process.env.GENIUS_HOST) {
-    songURL.host = process.env.GENIUS_HOST;
-  }
-  // Fetch the HTML content of the Genius page
+  songURL.host = process.env.GENIUS_PROXY_HOST!;
+  songURL.port = process.env.GENIUS_PROXY_PORT || "80";
+
   const htmlResponse = await fetch(songURL.toString());
   if (!htmlResponse.ok) {
     console.error(
