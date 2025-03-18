@@ -21,7 +21,7 @@ proxy:
   # ssl: true
   # host: app.example.com
   # Proxy connects to your container on port 80 by default.
-  app_port: 4000
+  app_port: 3000
   healthcheck:
     path: /up
     interval: 30
