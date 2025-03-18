@@ -168,7 +168,9 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   const htmlResponse = await fetch(songURL.toString());
   if (!htmlResponse.ok) {
     console.error(
-      `Failed to fetch HTML content for ${htmlResponse.status} ${rawSongURL}`
+      `Failed to fetch HTML content for ${
+        htmlResponse.status
+      } ${rawSongURL.toString()}`
     );
     console.error(await htmlResponse.text());
     return null;
