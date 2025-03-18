@@ -47,7 +47,7 @@ function userPrompt(language: string, text: string, context?: string) {
 
 export async function translateFromKorean(text: string) {
   const { object } = await generateObject({
-    model: openai("gpt-4-turbo"),
+    model: openai("gpt-4o-mini"),
     schema: translationResultSchema,
     temperature: 0,
     messages: [
