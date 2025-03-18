@@ -107,13 +107,13 @@ export async function getTrackDifficulty(track: SpotifyTrack): Promise<{
   return result.object;
 }
 
-export async function getLyrics(track: SpotifyTrack) {
+export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   // Try to get lyrics from KV cache first
   try {
     const cachedLyrics = await redis.get(`lyrics/${track.id}`);
     if (cachedLyrics) {
       console.log("Cache hit for lyrics:", track.id);
-      return cachedLyrics;
+      return cachedLyrics as string;
     }
   } catch (error) {
     console.error("Error reading from KV cache:", error);
@@ -208,4 +208,44 @@ export async function getLyrics(track: SpotifyTrack) {
   }
 
   return cleanedLyrics;
+}
+
+export async function getSpotifyTrack(
+  trackId: string,
+  accessToken: string
+): Promise<SpotifyTrack> {
+  // Try to get track data from KV cache first
+  try {
+    const cachedTrack = await redis.get(`track/${trackId}`);
+    if (cachedTrack) {
+      console.log("Cache hit for Spotify track:", trackId);
+      return cachedTrack as SpotifyTrack;
+    }
+  } catch (error) {
+    console.error("Error reading track from KV cache:", error);
+  }
+
+  // If not in cache, fetch from Spotify API
+  const response = await fetch(`https://api.spotify.com/v1/tracks/${trackId}`, {
+    headers: {
+      Authorization: `Bearer ${accessToken}`,
+    },
+  });
+
+  if (!response.ok) {
+    console.error(await response.text());
+    throw new Error("Failed to fetch song data");
+  }
+
+  const track = (await response.json()) as SpotifyTrack;
+
+  // Store track in KV cache (with 24-hour expiration)
+  try {
+    await redis.set(`track/${trackId}`, track, { ex: 86400 }); // 24 hours cache
+    console.log("Cached Spotify track:", trackId);
+  } catch (error) {
+    console.error("Error writing track to KV cache:", error);
+  }
+
+  return track;
 }

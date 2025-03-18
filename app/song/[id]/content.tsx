@@ -413,7 +413,7 @@ function InteractiveLyrics({
     <div className="space-y-4">
       <div className="text-3xl font-semibold">
         <div className="flex flex-wrap gap-1 items-baseline justify-between w-full">
-          <div className="flex flex-wrap gap-1 items-baseline">
+          <div className="flex flex-wrap gap-1 items-baseline pt-10">
             {breakdown.length > 0
               ? // Use breakdown data when available
                 breakdown.map((element, index, array) => {

@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { LyricsSection, SongPageContent } from "./content";
-import { getLyrics, hasUserFavorite } from "../../actions";
+import { getLyrics, hasUserFavorite, getSpotifyTrack } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
 import { redis } from "@/app/redis";
 import { Suspense } from "react";
@@ -14,21 +14,7 @@ export default async function SongPage({ params }: { params: { id: string } }) {
     throw new Error("No access token found");
   }
 
-  const response = await fetch(
-    `https://api.spotify.com/v1/tracks/${params.id}`,
-    {
-      headers: {
-        Authorization: `Bearer ${session.accessToken}`,
-      },
-    }
-  );
-
-  if (!response.ok) {
-    throw new Error("Failed to fetch song data");
-  }
-
-  const data = (await response.json()) as SpotifyTrack;
-
+  const data = await getSpotifyTrack(params.id, session.accessToken);
   const isFavorite = await hasUserFavorite(session.user.email, params.id);
 
   return (
@@ -41,7 +27,8 @@ export default async function SongPage({ params }: { params: { id: string } }) {
 }
 
 async function Lyrics(props: { data: SpotifyTrack }) {
-  const lyrics = ((await getLyrics(props.data)) || "").split("\n");
+  const lyricsText = await getLyrics(props.data);
+  const lyrics = lyricsText ? lyricsText.split("\n") : ["No lyrics found"];
   return <LyricsSection lyrics={lyrics} songId={props.data.id} />;
 }
 

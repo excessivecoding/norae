@@ -17,7 +17,7 @@ export const breakdownItemSchema = z.object({
   infinitive: infinitiveSchema.optional(),
   is_particle: z.boolean().optional(),
   examples: z.array(z.string()).min(1),
-  romanization: z.string().optional(),
+  romanization: z.string().optional().nullable(),
 });
 
 export const translationResultSchema = z.object({
@@ -34,7 +34,7 @@ do a breakdown of the lyrics into separate parts by space. give as much detail a
 
 if the lyrics is already in target language, just return the lyrics as is
 
-for language like korean or japanese, give the romanization of the lyrics.
+for language like korean or japanese, give the romanization of the lyrics; no need to give the romanization for latin based languages like english, spanish, french, etc.
 `;
 
 function userPrompt(language: string, text: string, context?: string) {
