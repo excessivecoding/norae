@@ -148,6 +148,7 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   const firstHit = results.response.hits.at(0)?.result;
 
   if (!firstHit) {
+    console.log("No lyrics found for:", track.id);
     return null;
   }
 
@@ -155,6 +156,7 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   const songUrl = firstHit.url;
 
   if (!songUrl) {
+    console.log("No song URL found for:", track.id);
     return null;
   }
 
