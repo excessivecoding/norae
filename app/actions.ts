@@ -161,9 +161,12 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   }
 
   const songURL = new URL(rawSongURL);
+  songURL.protocol = process.env.GENIUS_PROXY_PROTOCOL!;
   songURL.host = process.env.GENIUS_PROXY_HOST!;
   songURL.port = process.env.GENIUS_PROXY_PORT || "80";
+  songURL.searchParams.set("token", process.env.GENIUS_PROXY_TOKEN!);
 
+  console.log(songURL.toString());
   const htmlResponse = await fetch(songURL.toString());
   if (!htmlResponse.ok) {
     console.error(
