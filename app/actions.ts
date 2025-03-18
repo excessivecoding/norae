@@ -170,7 +170,7 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
     console.error(
       `Failed to fetch HTML content for ${
         htmlResponse.status
-      } ${rawSongURL.toString()}`
+      } ${songURL.toString()}`
     );
     console.error(await htmlResponse.text());
     return null;
