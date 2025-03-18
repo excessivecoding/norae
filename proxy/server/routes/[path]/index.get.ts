@@ -1,6 +1,14 @@
 export default defineEventHandler(async (event) => {
   // Get the path from the request URL
-  const path = getRequestURL(event).pathname.replace(/^\/+/, "");
+  const url = getRequestURL(event);
+  const token = url.searchParams.get("token");
+  if (token !== "+bhLszq+9fVhVbcZ6YaB54KTx9T50g3O8kQJgjooVCo=") {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unauthorized",
+    });
+  }
+  const path = url.pathname.replace(/^\/+/, "");
 
   // Create the target URL for genius.com
   const targetUrl = `https://genius.com/${path}`;
