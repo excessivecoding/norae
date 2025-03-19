@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy:proxy": "docker stack deploy -c docker-compose.yaml --detach=false docker-swarm"
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.2.5",

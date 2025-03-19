@@ -1,0 +1,8 @@
+services:
+  proxy:
+    image: xstevenyung/norae-proxy:latest
+    build:
+      context: ./proxy
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
