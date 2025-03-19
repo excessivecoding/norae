@@ -174,9 +174,11 @@ export function SearchBar() {
                   ))}
                 </CommandGroup>
               )}
-              <CommandEmpty className="py-6 text-center text-sm">
-                No tracks found.
-              </CommandEmpty>
+              {tracks.length < 1 && !isLoading && (
+                <CommandEmpty className="py-6 text-center text-sm">
+                  No tracks found.
+                </CommandEmpty>
+              )}
             </CommandList>
           </Command>
         </div>
