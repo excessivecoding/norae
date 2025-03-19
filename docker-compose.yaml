@@ -3,3 +3,23 @@ services:
     image: excessivecoding/norae-proxy:latest
     ports:
       - "3000:3000"
+
+  caddy:
+    image: caddy:2
+    ports:
+      - "80:80"
+      - "443:443"
+    configs:
+      - source: caddy_config
+        target: /etc/caddy/Caddyfile
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+configs:
+  caddy_config:
+    file: ./config/Caddyfile
