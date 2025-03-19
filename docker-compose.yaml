@@ -1,6 +1,6 @@
 services:
   proxy:
-    image: xstevenyung/norae-proxy:latest
+    image: excessivecoding/norae-proxy:latest
     build:
       context: ./proxy
       dockerfile: Dockerfile
