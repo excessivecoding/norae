@@ -1,6 +1,6 @@
 import { getCachedLyrics } from "@/app/actions";
 import { redis } from "@/app/redis";
-import { translateFromKorean, TranslationResult } from "@/app/translation";
+import { translate } from "@/app/translation";
 import { z } from "zod";
 
 export async function POST(request: Request) {
@@ -29,7 +29,7 @@ export async function POST(request: Request) {
     // Try to get cached translation first
     const cacheKey = `translations:${songId}/${text}`;
     const cachedTranslation = (await redis.get(cacheKey)) as Awaited<
-      ReturnType<typeof translateFromKorean>
+      ReturnType<typeof translate>
     >;
 
     if (cachedTranslation) {
@@ -38,7 +38,7 @@ export async function POST(request: Request) {
     }
 
     // If not cached, call the translation service
-    const translation = await translateFromKorean(text);
+    const translation = await translate(text);
 
     // Store in cache for future requests
     await redis.set(cacheKey, translation);
