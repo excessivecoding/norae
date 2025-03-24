@@ -11,13 +11,25 @@ export const infinitiveSchema = z.object({
 });
 
 export const breakdownItemSchema = z.object({
-  text: z.string(),
-  translation: z.string().optional(),
-  explanation: z.string().optional(),
-  infinitive: infinitiveSchema.optional(),
-  is_particle: z.boolean().optional(),
-  examples: z.array(z.string()).min(1),
-  romanization: z.string().optional().nullable(),
+  text: z.string().describe("the text to translate"),
+  translation: z.string().optional().describe("the translation of the text"),
+  explanation: z.string().optional().describe("the explanation of the text"),
+  infinitive: infinitiveSchema
+    .optional()
+    .describe("the infinitive of the word if there is any"),
+  examples: z
+    .array(z.string())
+    .min(2)
+    .describe(
+      "examples of the text used in at least 1 simple sentence and 1 more complex sentence"
+    ),
+  romanization: z
+    .string()
+    .optional()
+    .nullable()
+    .describe(
+      "the romanization of the text if the language is not latin based (like korean or japanese)"
+    ),
 });
 
 export const translationResultSchema = z.object({
@@ -45,7 +57,7 @@ function userPrompt(language: string, text: string, context?: string) {
   `;
 }
 
-export async function translate(text: string) {
+export async function translate(text: string, language: string = "english") {
   const { object } = await generateObject({
     model: openai("gpt-4o"),
     schema: translationResultSchema,
@@ -57,7 +69,7 @@ export async function translate(text: string) {
       },
       {
         role: "user",
-        content: userPrompt("english", text),
+        content: userPrompt(language, text),
       },
     ],
   });
