@@ -41,7 +41,12 @@ export async function POST(request: Request) {
       return new Response("Rate limit exceeded", { status: 429 });
     }
 
-    const cacheKey = `translations:${songId}/${text}`;
+    // special condition for gwon
+    const language = ["hautcielbleu@gmail.com"].includes(email)
+      ? "korean"
+      : "english";
+
+    const cacheKey = `translations/${language}/${songId}/${text}`;
     const cachedTranslation = (await redis.get(cacheKey)) as Awaited<
       ReturnType<typeof translate>
     >;
@@ -51,7 +56,7 @@ export async function POST(request: Request) {
       return Response.json(cachedTranslation);
     }
 
-    const translation = await translate(text);
+    const translation = await translate(text, language);
 
     await redis.set(cacheKey, translation);
     console.log("Cached translation for:", songId, text.substring(0, 20));

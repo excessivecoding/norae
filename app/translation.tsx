@@ -39,7 +39,7 @@ export const translationResultSchema = z.object({
 });
 
 const translationFromKoreanSystemPrompt = `
-you are an expert english translator that speak all languages in the world.
+you are an expert translator that speak all languages in the world.
 always answer in JSON as we will use the output into our app
 
 do a breakdown of the lyrics into separate parts by space. give as much detail as possible and give at least one example for each breakdown.
