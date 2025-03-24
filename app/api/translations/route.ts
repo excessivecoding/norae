@@ -1,9 +1,16 @@
 import { getCachedLyrics } from "@/app/actions";
-import { redis } from "@/app/redis";
+import { rateLimit, redis } from "@/app/redis";
 import { translate } from "@/app/translation";
+import { auth } from "@/auth";
 import { z } from "zod";
 
 export async function POST(request: Request) {
+  const session = await auth();
+
+  if (!session || !session.user?.email) {
+    return new Response("Unauthorized", { status: 401 });
+  }
+
   const data = await request.json();
 
   const result = z
@@ -26,7 +33,14 @@ export async function POST(request: Request) {
   const text = lyrics.split("\n")[lineIndex];
 
   try {
-    // Try to get cached translation first
+    const email = session.user.email;
+
+    const { success } = await rateLimit.limit(`${email}/ai`);
+
+    if (!success) {
+      return new Response("Rate limit exceeded", { status: 429 });
+    }
+
     const cacheKey = `translations:${songId}/${text}`;
     const cachedTranslation = (await redis.get(cacheKey)) as Awaited<
       ReturnType<typeof translate>
@@ -37,10 +51,8 @@ export async function POST(request: Request) {
       return Response.json(cachedTranslation);
     }
 
-    // If not cached, call the translation service
     const translation = await translate(text);
 
-    // Store in cache for future requests
     await redis.set(cacheKey, translation);
     console.log("Cached translation for:", songId, text.substring(0, 20));
 

@@ -2,7 +2,7 @@
 
 import { auth } from "@/auth";
 import { SpotifyTrack } from "@/app/types/spotify";
-import { redis } from "./redis";
+import { rateLimit, redis } from "./redis";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { openai } from "./openai";
@@ -70,6 +70,12 @@ export type TrackDifficulty = z.infer<typeof difficultySchema>;
 export async function getTrackDifficulty(track: SpotifyTrack): Promise<{
   difficulty: TrackDifficulty;
 }> {
+  const session = await auth();
+
+  if (!session || !session.user?.email) {
+    throw new Error("Unauthorized");
+  }
+
   // Try to get difficulty from KV cache first
   try {
     const cachedDifficulty = await redis.get(`difficulty/${track.id}`);
@@ -79,6 +85,14 @@ export async function getTrackDifficulty(track: SpotifyTrack): Promise<{
     }
   } catch (error) {
     console.error("Error reading difficulty from KV cache:", error);
+  }
+
+  const email = session.user.email;
+
+  const { success } = await rateLimit.limit(`${email}/ai`);
+
+  if (!success) {
+    throw new Error("Rate limit exceeded");
   }
 
   const lyrics = await getLyrics(track);
