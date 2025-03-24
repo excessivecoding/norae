@@ -107,16 +107,26 @@ export async function getTrackDifficulty(track: SpotifyTrack): Promise<{
   return result.object;
 }
 
-export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
-  // Try to get lyrics from KV cache first
+export async function getCachedLyrics(
+  track: Pick<SpotifyTrack, "id">
+): Promise<string | null> {
   try {
     const cachedLyrics = await redis.get(`lyrics/${track.id}`);
     if (cachedLyrics) {
       console.log("Cache hit for lyrics:", track.id);
       return cachedLyrics as string;
     }
+    return null;
   } catch (error) {
     console.error("Error reading from KV cache:", error);
+    return null;
+  }
+}
+
+export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
+  const cachedLyrics = await getCachedLyrics(track);
+  if (cachedLyrics) {
+    return cachedLyrics;
   }
 
   const response = await fetch(

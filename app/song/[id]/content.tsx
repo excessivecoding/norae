@@ -185,6 +185,7 @@ My question: ${questionValue}`;
               <InteractiveLyrics
                 line={lyrics[selectedLine] || ""}
                 songId={songId}
+                lineIndex={selectedLine}
               />
               <div className="flex justify-end">
                 {!isQuestionInputVisible ? (
@@ -279,6 +280,7 @@ interface InteractiveLyricsProps {
   initialSelectedWord?: number | null;
   onWordSelect?: (index: number | null) => void;
   songId: string;
+  lineIndex: number;
 }
 
 function InteractiveLyrics({
@@ -286,6 +288,7 @@ function InteractiveLyrics({
   initialSelectedWord = null,
   onWordSelect,
   songId,
+  lineIndex,
 }: InteractiveLyricsProps) {
   const [selectedWord, setSelectedWord] = useState<number | null>(
     initialSelectedWord
@@ -299,7 +302,7 @@ function InteractiveLyrics({
   // Move translation query logic here
   const { data: translationData, isLoading: isTranslationLoading } =
     useQuery<TranslationResult>({
-      queryKey: ["translation", songId, line],
+      queryKey: ["translation", songId, lineIndex],
       queryFn: async (): Promise<TranslationResult> => {
         const response = await fetch("/api/translations", {
           method: "POST",
@@ -307,8 +310,8 @@ function InteractiveLyrics({
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            songId: songId,
-            text: line,
+            songId,
+            lineIndex,
           }),
         });
 

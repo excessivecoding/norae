@@ -1,3 +1,4 @@
+import { getCachedLyrics } from "@/app/actions";
 import { redis } from "@/app/redis";
 import { translateFromKorean, TranslationResult } from "@/app/translation";
 import { z } from "zod";
@@ -8,7 +9,7 @@ export async function POST(request: Request) {
   const result = z
     .object({
       songId: z.string(),
-      text: z.string(),
+      lineIndex: z.number(),
     })
     .safeParse(data);
 
@@ -16,7 +17,13 @@ export async function POST(request: Request) {
     return new Response(result.error.message, { status: 400 });
   }
 
-  const { songId, text } = result.data;
+  const { songId, lineIndex } = result.data;
+  const lyrics = await getCachedLyrics({ id: songId });
+  if (!lyrics) {
+    return new Response("No lyrics found", { status: 404 });
+  }
+
+  const text = lyrics.split("\n")[lineIndex];
 
   try {
     // Try to get cached translation first
