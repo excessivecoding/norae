@@ -119,7 +119,7 @@ My question: ${questionValue}`;
                 },
                 body: JSON.stringify({
                   songId,
-                  text: lineText,
+                  lineIndex,
                 }),
               });
 
@@ -143,13 +143,12 @@ My question: ${questionValue}`;
       }
     };
 
-    const nextLineIndex = selectedLine + 1;
-    const nextNextLineIndex = selectedLine + 2;
-
     // Use Promise.all to fetch both in parallel
     Promise.all([
-      prefetchLineTranslation(nextLineIndex),
-      prefetchLineTranslation(nextNextLineIndex),
+      prefetchLineTranslation(selectedLine + 1),
+      prefetchLineTranslation(selectedLine + 2),
+      prefetchLineTranslation(selectedLine + 3),
+      prefetchLineTranslation(selectedLine + 4),
     ]).catch((error) => {
       console.error("Error during prefetching:", error);
     });
