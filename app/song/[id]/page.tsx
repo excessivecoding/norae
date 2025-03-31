@@ -1,8 +1,8 @@
 import { auth } from "@/auth";
+import { redirect } from "next/navigation";
 import { LyricsSection, SongPageContent } from "./content";
 import { getLyrics, hasUserFavorite, getSpotifyTrack } from "../../actions";
 import { SpotifyTrack } from "@/app/types/spotify";
-import { redis } from "@/app/redis";
 import { Suspense } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -11,7 +11,7 @@ export default async function SongPage({ params }: { params: { id: string } }) {
   const session = await auth();
 
   if (!session?.accessToken || !session?.user?.email) {
-    throw new Error("No access token found");
+    return redirect("/");
   }
 
   const data = await getSpotifyTrack(params.id, session.accessToken);
