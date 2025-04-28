@@ -102,57 +102,57 @@ My question: ${questionValue}`;
   };
 
   // Prefetch the translations for the next 2 lines when the selected line changes
-  useEffect(() => {
-    const prefetchLineTranslation = async (lineIndex: number) => {
-      console.log("prefetching line", lineIndex);
-      const lineText = lyrics[lineIndex];
+  // useEffect(() => {
+  //   const prefetchLineTranslation = async (lineIndex: number) => {
+  //     console.log("prefetching line", lineIndex);
+  //     const lineText = lyrics[lineIndex];
 
-      if (lineText && lineText.trim()) {
-        try {
-          await queryClient.prefetchQuery({
-            queryKey: ["translation", songId, lineText],
-            queryFn: async () => {
-              const response = await fetch("/api/translations", {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                  songId,
-                  lineIndex,
-                }),
-              });
+  //     if (lineText && lineText.trim()) {
+  //       try {
+  //         await queryClient.prefetchQuery({
+  //           queryKey: ["translation", songId, lineText],
+  //           queryFn: async () => {
+  //             const response = await fetch("/api/translations", {
+  //               method: "POST",
+  //               headers: {
+  //                 "Content-Type": "application/json",
+  //               },
+  //               body: JSON.stringify({
+  //                 songId,
+  //                 lineIndex,
+  //               }),
+  //             });
 
-              if (!response.ok) {
-                throw new Error("Failed to fetch translation");
-              }
+  //             if (!response.ok) {
+  //               throw new Error("Failed to fetch translation");
+  //             }
 
-              return await response.json();
-            },
-            staleTime: 5 * 60 * 1000,
-            gcTime: 10 * 60 * 1000,
-          });
+  //             return await response.json();
+  //           },
+  //           staleTime: 5 * 60 * 1000,
+  //           gcTime: 10 * 60 * 1000,
+  //         });
 
-          console.log(`Prefetched translation for line ${lineIndex}`);
-        } catch (error) {
-          console.error(
-            `Error prefetching translation for line ${lineIndex}:`,
-            error
-          );
-        }
-      }
-    };
+  //         console.log(`Prefetched translation for line ${lineIndex}`);
+  //       } catch (error) {
+  //         console.error(
+  //           `Error prefetching translation for line ${lineIndex}:`,
+  //           error
+  //         );
+  //       }
+  //     }
+  //   };
 
-    // Use Promise.all to fetch both in parallel
-    Promise.all([
-      prefetchLineTranslation(selectedLine + 1),
-      prefetchLineTranslation(selectedLine + 2),
-      prefetchLineTranslation(selectedLine + 3),
-      prefetchLineTranslation(selectedLine + 4),
-    ]).catch((error) => {
-      console.error("Error during prefetching:", error);
-    });
-  }, [selectedLine, songId, lyrics, queryClient]);
+  //   // Use Promise.all to fetch both in parallel
+  //   Promise.all([
+  //     prefetchLineTranslation(selectedLine + 1),
+  //     prefetchLineTranslation(selectedLine + 2),
+  //     prefetchLineTranslation(selectedLine + 3),
+  //     prefetchLineTranslation(selectedLine + 4),
+  //   ]).catch((error) => {
+  //     console.error("Error during prefetching:", error);
+  //   });
+  // }, [selectedLine, songId, lyrics, queryClient]);
 
   return (
     <div className="grid md:grid-cols-2 gap-6">
