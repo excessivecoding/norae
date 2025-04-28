@@ -90,11 +90,11 @@ export async function getTrackDifficulty(track: SpotifyTrack): Promise<{
 
   const email = session.user.email;
 
-  const { success } = await rateLimit.limit(`${email}/ai`);
+  // const { success } = await rateLimit.limit(`${email}/ai`);
 
-  if (!success) {
-    throw new Error("Rate limit exceeded");
-  }
+  // if (!success) {
+  //   throw new Error("Rate limit exceeded");
+  // }
 
   const lyrics = await getLyrics(track);
 
@@ -194,7 +194,9 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   const htmlResponse = await fetch(songURL.toString());
   if (!htmlResponse.ok) {
     console.error(
-      `Failed to fetch HTML content for ${htmlResponse.status} ${htmlResponse.statusText} ${songURL.toString()}`
+      `Failed to fetch HTML content for ${htmlResponse.status} ${
+        htmlResponse.statusText
+      } ${songURL.toString()}`
     );
     console.error(await htmlResponse.text());
     return null;

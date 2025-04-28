@@ -35,11 +35,11 @@ export async function POST(request: Request) {
   try {
     const email = session.user.email;
 
-    const { success } = await rateLimit.limit(`${email}/ai`);
+    // const { success } = await rateLimit.limit(`${email}/ai`);
 
-    if (!success) {
-      return new Response("Rate limit exceeded", { status: 429 });
-    }
+    // if (!success) {
+    //   return new Response("Rate limit exceeded", { status: 429 });
+    // }
 
     // special condition for gwon
     const language = ["hautcielbleu@gmail.com"].includes(email)
