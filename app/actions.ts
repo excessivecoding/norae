@@ -6,6 +6,7 @@ import { rateLimit, redis } from "./redis";
 import { generateObject } from "ai";
 import { z } from "zod";
 import { openai } from "./openai";
+import * as cheerio from "cheerio";
 
 export async function getUserFavorites(email: string) {
   const value = (await redis.get(`v1/${email}/favorites`)) || [];
@@ -193,47 +194,50 @@ export async function getLyrics(track: SpotifyTrack): Promise<string | null> {
   const htmlResponse = await fetch(songURL.toString());
   if (!htmlResponse.ok) {
     console.error(
-      `Failed to fetch HTML content for ${
-        htmlResponse.status
-      } ${songURL.toString()}`
+      `Failed to fetch HTML content for ${htmlResponse.status} ${htmlResponse.statusText} ${songURL.toString()}`
     );
     console.error(await htmlResponse.text());
     return null;
   }
   const htmlText = await htmlResponse.text();
 
-  // Extract lyrics using a simpler approach to find the lyrics container
-  const lyricsRegex =
-    /<div[^>]*data-lyrics-container="true"[^>]*>([\s\S]*?)<\/div>/gi;
-  const lyricsMatches = [...htmlText.matchAll(lyricsRegex)];
+  // Load the HTML content into cheerio
+  const $ = cheerio.load(htmlText);
 
-  if (!lyricsMatches || lyricsMatches.length === 0) {
+  // Select the lyrics container divs using the data attribute
+  const lyricsContainers = $('div[data-lyrics-container="true"]');
+
+  if (lyricsContainers.length === 0) {
     console.log("Couldn't find the lyrics section. URL:", rawSongURL);
     return null;
   }
 
-  // Combine all matches and replace <br> tags with newlines
-  let lyrics = lyricsMatches.map((match) => match[1]).join("\n");
-  lyrics = lyrics.replace(/<br\s*\/?>/gi, "\n");
+  // Extract and combine text content from all matching containers
+  let lyrics = "";
+  lyricsContainers.each((index, element) => {
+    const $container = $(element); // Wrap the current container element with cheerio
 
-  // Remove HTML tags
-  lyrics = lyrics.replace(/<[^>]*>/g, "");
+    // Find and remove nested divs marked for exclusion within this container
+    $container.find('div[data-exclude-from-selection="true"]').remove();
+
+    // Replace <br> tags with newlines within the modified element before getting text
+    $container.find("br").replaceWith("\n");
+    // Append the text content of the modified container
+    lyrics += $container.text();
+    // Add a newline between sections if there are multiple containers
+    if (index < lyricsContainers.length - 1) {
+      lyrics += "\n";
+    }
+  });
 
   // Remove section headers like [Verse], [Bridge], etc.
   lyrics = lyrics.replace(/\[.*?\]/g, "");
 
-  // Clean up multiple newlines
+  // Clean up multiple newlines potentially introduced
   lyrics = lyrics.replace(/\n{2,}/g, "\n");
 
-  // Decode HTML entities
-  lyrics = lyrics
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&#x27;/g, "'");
+  // Minimal explicit entity decoding (most handled by .text())
+  lyrics = lyrics.replace(/&#x27;/g, "'");
 
   const cleanedLyrics = lyrics.trim();
 
