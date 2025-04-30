@@ -1,0 +1,15 @@
+services:
+  proxy:
+    image: excessivecoding/norae-proxy:latest
+    ports:
+      - "3000:3000"
+    deploy:
+      update_config:
+        order: start-first
+    # this is the network of my VPS, change if needed
+    networks:
+      - docker-swarm_shared_network
+
+networks:
+  docker-swarm_shared_network:
+    external: true

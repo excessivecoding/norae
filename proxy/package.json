@@ -1,0 +1,14 @@
+{
+  "private": true,
+  "scripts": {
+    "build": "nitro build",
+    "dev": "PORT=4000 nitro dev",
+    "prepare": "nitro prepare",
+    "preview": "node .output/server/index.mjs",
+    "docker:build": "docker build -t excessivecoding/norae-proxy:latest .",
+    "docker:push": "docker push excessivecoding/norae-proxy:latest"
+  },
+  "devDependencies": {
+    "nitropack": "latest"
+  }
+}
